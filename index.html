@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Hub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#22c55e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="assets/icon.png">
+
+    <link rel="apple-touch-icon" href="assets/icon.png">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>School Hub</h1>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <div id="userProfile" class="glass-panel hidden"
+                    style="padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span id="userName" style="font-weight: bold; color: var(--primary);">Student</span>
+                    <span id="userXP"
+                        style="background: var(--surface); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">0
+                        XP</span>
+                    <button onclick="logout()"
+                        style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; margin-left: 0.5rem;">(Uitloggen)</button>
+                </div>
+                <a id="loginBtn" href="login.html" class="btn btn-primary">Inloggen</a>
+            </div>
+            <div
+                style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 0.5rem;">
+                    <a href="challenges.html" class="btn"
+                        style="background: var(--accent); color: white; border: none; padding: 0.5rem 1rem;">
+                        ⚔️ Daag iemand uit!
+                    </a>
+                    <a href="passport.html" class="btn"
+                        style="background: var(--secondary); color: black; border: none; padding: 0.5rem 1rem;">
+                        📇 Machine Paspoort
+                    </a>
+                    <a href="map.html" class="btn"
+                        style="background: rgba(255,255,255,0.1); color: white; border: none; padding: 0.5rem 1rem;">
+                        🗺️ Werkplaats Map
+                    </a>
+                </div>
+                <a href="leaderboard.html"
+                    style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">🏆 Bekijk Leaderboard
+                    &rarr;</a>
+            </div>
+        </header>
+
+        <main>
+            <div id="quizGrid" class="grid">
+                <!-- Quizzes will be loaded here dynamically -->
+                <div class="glass-panel card loading">
+                    Laden...
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { supabaseClient, getQuizzes, getStudentProgress, showError } from './js/supabase.js';
+
+        // Global Error Handler
+        // Global Error Handler
+        window.onerror = function (msg, url, line, col, error) {
+            const grid = document.getElementById('quizGrid');
+            if (grid) {
+                grid.innerHTML = `
+                    <div class="glass-panel card" style="color: #ef4444; border-color: #ef4444;">
+                        <h3>Er is een fout opgetreden!</h3>
+                        <p><strong>Melding:</strong> ${msg}</p>
+                        <p><strong>Regel:</strong> ${line}</p>
+                        <p>Neem een foto van dit scherm en stuur het door.</p>
+                    </div>
+                `;
+            }
+            return false;
+        };
+
+        // State
+        let allQuizzes = [];
+        let currentView = 'folders'; // 'folders' or 'quizzes'
+        let selectedCategory = null;
+
+        // Main Hub Logic
+        document.addEventListener('DOMContentLoaded', async () => {
+            const loggedIn = await checkLogin();
+            if (!loggedIn) return;
+
+            renderFolders();
+        });
+
+        function renderFolders() {
+            const grid = document.getElementById('quizGrid');
+            const header = document.querySelector('header h1');
+
+            currentView = 'folders';
+            selectedCategory = null;
+            header.innerText = "VTI Metaal-app";
+
+            // Fixed VTI Categories
+            const categories = [
+                { name: 'Veiligheid', icon: '🛡️', desc: 'Werk veilig of werk niet.' },
+                { name: 'Gereedschappen', icon: '🛠️', desc: 'Ken je materiaal.' },
+                { name: 'Machines', icon: '⚙️', desc: 'Bediening & onderhoud.' },
+                { name: 'Stappenplannen', icon: '📋', desc: 'Werkvolgorde & precisie.' },
+                { name: 'Lassen', icon: '🔥', desc: 'Samenvoegen met vuur.' },
+                { name: 'Toetsen & Opdrachten', icon: '✍️', desc: 'Officiële testen & evaluaties.' }
+            ];
+
+            grid.innerHTML = '';
+
+            categories.forEach(cat => {
+                const card = document.createElement('div');
+                card.className = 'glass-panel card';
+                card.onclick = () => renderLevelsForCategory(cat.name);
+                card.innerHTML = `
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">${cat.icon}</div>
+                    <h2>${cat.name}</h2>
+                    <p>${cat.desc}</p>
+                    <div class="card-footer">
+                        <span>Open Categorie &rarr;</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function renderLevelsForCategory(category) {
+            const grid = document.getElementById('quizGrid');
+            const header = document.querySelector('header h1');
+            const user = JSON.parse(localStorage.getItem('schoolHubUser') || '{}');
+
+            currentView = 'levels';
+            selectedCategory = category;
+            header.innerHTML = `<span style="cursor:pointer; opacity:0.7" onclick="renderFolders()">&larr;</span> ${category}`;
+
+            grid.innerHTML = '<div class="loading">Inhoud laden...</div>';
+
+            // Optimized Fetch: Only quizzes for this category
+            let fetchCategory = category === 'Toetsen & Opdrachten' ? 'Toetsen' : category;
+            const { data: quizzes, error } = await getQuizzes(fetchCategory);
+            const { data: progress } = await getStudentProgress(user.id);
+
+            if (error) {
+                showError(error.message, 'renderLevelsForCategory');
+                grid.innerHTML = `<div class="glass-panel card" style="color: #ef4444">Inhoud kon niet worden geladen.</div>`;
+                return;
+            }
+
+            const passedQuizIds = (progress || []).filter(p => p.passed).map(p => p.quiz_id);
+
+            // Special Case: Toetsen & Opdrachten
+            if (category === 'Toetsen & Opdrachten') {
+                if (!quizzes || quizzes.length === 0) {
+                    grid.innerHTML = '<div class="glass-panel card">Geen toetsen beschikbaar.</div>';
+                    return;
+                }
+                grid.innerHTML = quizzes.map(test => `
+                    <div class="glass-panel card" onclick="window.location.href='quiz.html?id=${test.id}'">
+                        <h3>${test.title}</h3>
+                        <p>${test.description || ''}</p>
+                        <div class="card-footer">
+                            <span>Start Toets &rarr;</span>
+                        </div>
+                    </div>
+                `).join('');
+                return;
+            }
+
+            // Normal Category: Level Grid
+            const levels = [1, 2, 3, 4];
+
+            grid.innerHTML = `
+                <div class="glass-panel" style="grid-column: 1 / -1; padding: 2rem;">
+                    <h3>Voortgang: ${category}</h3>
+                    <div class="level-grid">
+                        ${levels.map(lvl => {
+                const quiz = quizzes.find(q => q.level === lvl);
+                const isFirst = lvl === 1;
+                const prevQuiz = quizzes.find(q => q.level === lvl - 1);
+                const isUnlocked = isFirst || (prevQuiz && passedQuizIds.includes(prevQuiz.id));
+
+                return `
+                                <div class="level-node ${isUnlocked ? 'unlocked' : 'locked'}" 
+                                     onclick="${isUnlocked && quiz ? `window.location.href='quiz.html?id=${quiz.id}'` : ''}">
+                                    <div class="level-number">${lvl}</div>
+                                    <div class="level-label">Level</div>
+                                </div>
+                            `;
+            }).join('')}
+                    </div>
+                    <p style="margin-top: 1rem; color: var(--text-muted);">
+                        Slaag met 9/10 om het volgende niveau vrij te spelen!
+                    </p>
+                </div>
+            `;
+        }
+
+        async function checkLogin() {
+            const loginBtn = document.getElementById('loginBtn');
+            const userProfile = document.getElementById('userProfile');
+            const userName = document.getElementById('userName');
+            const userXP = document.getElementById('userXP');
+
+            // 1. Check Supabase Auth session
+            const { data: { user }, error } = await supabaseClient.auth.getUser();
+
+            if (error || !user) {
+                // Not logged in
+                loginBtn.classList.remove('hidden');
+                userProfile.classList.add('hidden');
+                window.location.href = 'login.html';
+                return false;
+            }
+
+            // 2. Fetch student profile from the database (via RLS)
+            const { data: student } = await supabaseClient
+                .from('students')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (student) {
+                loginBtn.classList.add('hidden');
+                userProfile.classList.remove('hidden');
+                userName.innerText = student.name;
+                userXP.innerText = `${student.total_xp || 0} XP`;
+
+                // Update local storage for immediate access elsewhere
+                localStorage.setItem('schoolHubUser', JSON.stringify(student));
+
+                // Admin Link
+                if (student.is_admin) {
+                    const existing = document.getElementById('adminLink');
+                    if (!existing) {
+                        const adminLink = document.createElement('a');
+                        adminLink.id = 'adminLink';
+                        adminLink.href = 'admin.html';
+                        adminLink.className = 'btn';
+                        adminLink.style.background = 'rgba(255,255,255,0.1)';
+                        adminLink.style.color = 'white';
+                        adminLink.style.marginRight = '1rem';
+                        adminLink.innerText = '⚙️ Admin';
+                        userProfile.parentElement.insertBefore(adminLink, userProfile);
+                    }
+                }
+                return true;
+            } else {
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('schoolHubUser');
+            window.location.reload();
+        }
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered!'))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+
+</html>

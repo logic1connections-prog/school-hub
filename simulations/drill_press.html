@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kolomboormachine - Logic Connections</title>
+    <!-- Import Google Font: Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- CORE VARIABLES & RESET --- */
+        :root {
+            --bg-dark: #050508;
+            --bg-radial: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #050508 100%);
+            --glass-panel: rgba(20, 20, 30, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #e0e0e0;
+            --text-muted: #94a3b8;
+
+            /* Neon Accents */
+            --accent-cyan: #00f3ff;
+            --accent-magenta: #ff00ff;
+            --accent-purple: #bc13fe;
+            --danger-red: #ff2a2a;
+            --success-green: #00ff9d;
+
+            /* Glows */
+            --glow-cyan: 0 0 15px rgba(0, 243, 255, 0.4);
+            --glow-magenta: 0 0 15px rgba(255, 0, 255, 0.4);
+
+            --border-radius: 16px;
+            --font-main: 'Montserrat', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--bg-dark);
+            background-image: var(--bg-radial);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- HEADER --- */
+        header {
+            padding: 15px 30px;
+            background: rgba(5, 5, 8, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .header-content h1 {
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 1.8rem;
+            background: linear-gradient(90deg, #fff, var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--accent-magenta);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .creator-tag {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.3s ease;
+        }
+
+        .creator-tag:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        /* --- MAIN LAYOUT --- */
+        main {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- LEFT: MACHINE VIEW --- */
+        .machine-container {
+            flex: 2;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image:
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        /* Vignette effect */
+        .machine-container::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, transparent 40%, var(--bg-dark) 100%);
+            pointer-events: none;
+        }
+
+        /* NAV ARROWS */
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+
+        .nav-arrow:hover {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            background: rgba(0, 243, 255, 0.1);
+            box-shadow: var(--glow-cyan);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .nav-left {
+            left: 20px;
+        }
+
+        .nav-right {
+            right: 20px;
+        }
+
+        .view-label {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: 1px solid var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+            z-index: 5;
+        }
+
+        /* SVG STYLING */
+        svg {
+            height: 95%;
+            width: 100%;
+            max-width: 850px;
+            filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.8));
+            z-index: 1;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* VIEW TRANSITIONS */
+        .machine-view {
+            transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+            opacity: 0;
+            transform-origin: center center;
+            pointer-events: none;
+        }
+
+        .machine-view.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: scale(1) rotateY(0deg);
+        }
+
+        .machine-view.hidden-left {
+            transform: translateX(-100px) rotateY(-15deg) scale(0.8);
+            opacity: 0;
+        }
+
+        .machine-view.hidden-right {
+            transform: translateX(100px) rotateY(15deg) scale(0.8);
+            opacity: 0;
+        }
+
+        /* INTERACTIVE PARTS */
+        .machine-part {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            stroke-width: 1;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .machine-part:hover {
+            filter: brightness(1.4) drop-shadow(0 0 15px var(--accent-cyan));
+            stroke: var(--accent-cyan) !important;
+            stroke-width: 2 !important;
+        }
+
+        .machine-part.active {
+            filter: brightness(1.3) drop-shadow(0 0 25px var(--accent-magenta));
+            stroke: var(--accent-magenta) !important;
+            stroke-width: 3 !important;
+        }
+
+        /* HAZARDS */
+        .hazard-part {
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+            filter: drop-shadow(0 0 8px red);
+            animation: pulse-danger 2s infinite;
+        }
+
+        .hazard-part.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .hazard-part.fixed {
+            opacity: 0;
+            pointer-events: none;
+            animation: none;
+        }
+
+        @keyframes pulse-danger {
+            0% {
+                filter: drop-shadow(0 0 5px rgba(255, 42, 42, 0.6));
+            }
+
+            50% {
+                filter: drop-shadow(0 0 20px rgba(255, 42, 42, 1));
+            }
+
+            100% {
+                filter: drop-shadow(0 0 5px rgba(255, 42, 42, 0.6));
+            }
+        }
+
+        /* --- RIGHT: PANEL CONTAINER --- */
+        .panel-container {
+            flex: 1;
+            min-width: 420px;
+            background: var(--glass-panel);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid var(--glass-border);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 20;
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
+        }
+
+        /* MODE SWITCHER */
+        .mode-switch {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .mode-btn.active {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+        }
+
+        .mode-btn.inspector-mode.active {
+            background: var(--danger-red);
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 42, 42, 0.4);
+        }
+
+        /* CONTENT SECTIONS */
+        .content-section {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .content-section.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* INFO CARD */
+        .info-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            position: relative;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .info-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+            border-color: var(--accent-magenta);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.1);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 0, 255, 0.05) 100%);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+        }
+
+        .part-number {
+            background: var(--accent-magenta);
+            color: white;
+            font-weight: 900;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            margin-right: 15px;
+            font-size: 1.2rem;
+            box-shadow: var(--glow-magenta);
+        }
+
+        .part-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .part-description {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #ccc;
+            margin-bottom: 25px;
+        }
+
+        .safety-box {
+            background: rgba(255, 0, 255, 0.08);
+            border-left: 4px solid var(--accent-magenta);
+            padding: 20px;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .safety-title {
+            color: var(--accent-magenta);
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* QUIZ & CARDS COMMON */
+        .quiz-card,
+        .mistake-card,
+        .inspector-card,
+        .drill-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            border: 1px solid var(--glass-border);
+            margin-bottom: 15px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* QUIZ STYLES */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            font-size: 1.1rem;
+        }
+
+        .question-text {
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 18px;
+            text-align: left;
+            color: var(--text-main);
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        .option-btn:hover {
+            background: rgba(0, 243, 255, 0.1);
+            border-color: var(--accent-cyan);
+            transform: translateX(5px);
+        }
+
+        .option-btn.correct {
+            background: rgba(0, 255, 157, 0.15);
+            border-color: var(--success-green);
+            color: var(--success-green);
+        }
+
+        .option-btn.wrong {
+            background: rgba(255, 42, 42, 0.15);
+            border-color: var(--danger-red);
+            color: var(--danger-red);
+        }
+
+        .restart-btn {
+            padding: 12px 35px;
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+            border-radius: 30px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            box-shadow: var(--glow-cyan);
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
+        .start-btn-red {
+            background: var(--danger-red);
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 42, 42, 0.5);
+        }
+
+        /* DRILL MODE */
+        .drill-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .drill-toggle {
+            padding: 15px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .drill-toggle:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 243, 255, 0.05);
+            color: white;
+        }
+
+        .drill-toggle.active-state {
+            border-color: var(--success-green);
+            color: var(--success-green);
+            background: rgba(0, 255, 157, 0.05);
+        }
+
+        .drill-actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .drill-action {
+            flex: 1;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .drill-action.primary {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: var(--glow-cyan);
+        }
+
+        .drill-action.danger {
+            background: var(--danger-red);
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 42, 42, 0.4);
+        }
+
+        .drill-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+            filter: grayscale(1);
+        }
+
+        .drill-status {
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            font-family: monospace;
+            color: var(--accent-cyan);
+        }
+
+        /* FAIL MODAL */
+        .fail-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .fail-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .fail-box {
+            position: relative;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(500px, 90%);
+            background: #1a0a10;
+            border: 2px solid var(--danger-red);
+            box-shadow: 0 0 50px rgba(255, 42, 42, 0.4);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        @keyframes shake {
+
+            10%,
+            90% {
+                transform: translate(-51%, -50%);
+            }
+
+            20%,
+            80% {
+                transform: translate(-49%, -50%);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translate(-52%, -50%);
+            }
+
+            40%,
+            60% {
+                transform: translate(-48%, -50%);
+            }
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+            header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 15px;
+            }
+
+            main {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+
+            .machine-container {
+                height: 50vh;
+                flex: none;
+            }
+
+            .panel-container {
+                min-width: 100%;
+                border-left: none;
+                border-top: 1px solid var(--glass-border);
+            }
+        }
+
+
+
+        /* VIBRATION ANIMATION */
+        @keyframes vibrate {
+            0% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(1px);
+            }
+
+            50% {
+                transform: translateX(-1px);
+            }
+
+            75% {
+                transform: translateX(1px);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        .vibrating {
+            animation: vibrate 0.05s linear infinite;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-content">
+            <a href="../../index.html"
+                style="text-decoration:none; color:var(--text-muted); font-size:0.8rem; display:block; margin-bottom:5px;">&larr;
+                Terug naar Hub</a>
+            <h1>Kolomboormachine</h1>
+            <div class="subtitle">Interactieve Scanner & Quiz <small style="opacity:0.5">(v2.1)</small></div>
+        </div>
+        <div class="creator-tag">Created by Birger Joos</div>
+    </header>
+
+    <main>
+        <div class="machine-container">
+            <!-- NAVIGATION ARROWS -->
+            <div class="nav-arrow nav-left" onclick="rotateView(-1)">❮</div>
+            <div class="nav-arrow nav-right" onclick="rotateView(1)">❯</div>
+
+            <div class="view-label" id="view-label">VOORAANZICHT</div>
+
+            <!-- ViewBox widened for larger machine -->
+            <svg viewBox="0 0 600 850" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="gradMetal" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#2a2a30;stop-opacity:1" />
+                        <stop offset="20%" style="stop-color:#3a3a40;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#5a5a65;stop-opacity:1" />
+                        <stop offset="80%" style="stop-color:#3a3a40;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#2a2a30;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="gradChrome" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#777;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#eee;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#777;stop-opacity:1" />
+                    </linearGradient>
+                    <!-- Pattern for Knurling (Grippy texture) -->
+                    <pattern id="patKnurl" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+                        <path d="M0,4 L4,0 M-1,1 L1,-1 M3,5 L5,3" stroke="#222" stroke-width="1" />
+                    </pattern>
+                </defs>
+
+                <!-- ================= FRONT VIEW ================= -->
+                <g id="view-front" class="machine-view active">
+                    <!-- 1. VOET (Base) -->
+                    <g id="front-voet" class="machine-part" data-id="1" stroke="#333" stroke-width="1">
+                        <path d="M100,780 L500,780 L480,830 L120,830 Z" fill="#2a2a30" />
+                        <rect x="180" y="760" width="240" height="30" rx="4" fill="#3a3a40" />
+                        <rect x="220" y="790" width="160" height="8" rx="4" fill="#111" opacity="0.6" />
+                        <rect x="220" y="810" width="160" height="8" rx="4" fill="#111" opacity="0.6" />
+                        <circle cx="150" cy="805" r="5" fill="#555" stroke="#111" />
+                        <circle cx="450" cy="805" r="5" fill="#555" stroke="#111" />
+                    </g>
+
+                    <!-- 2. KOLOM (Column) -->
+                    <g id="front-kolom" class="machine-part" data-id="2">
+                        <rect x="270" y="180" width="60" height="580" fill="url(#gradChrome)" stroke="#222" />
+                        <path d="M320,200 L320,700" stroke="#444" stroke-width="6" stroke-dasharray="3,3" />
+                    </g>
+
+                    <!-- 3. TAFEL (Table) -->
+                    <g id="front-tafel" class="machine-part" data-id="3">
+                        <path d="M260,480 L180,480 L160,500 L160,580 L180,600 L270,600" fill="#3a3a45" stroke="#222"
+                            stroke-width="2" />
+                        <rect x="250" y="470" width="90" height="70" rx="5" fill="#333" stroke="#555" />
+                        <path d="M295,490 L340,550" stroke="#888" stroke-width="6" stroke-linecap="round" />
+                        <circle cx="340" cy="550" r="8" fill="#111" />
+                        <path d="M100,520 L350,520 L340,550 L110,550 Z" fill="url(#gradMetal)" stroke="#222" />
+                        <rect x="110" y="550" width="230" height="15" fill="#2a2a30" stroke="#222" />
+                        <!-- 10. MACHINEKLEM (Clamp) -->
+                        <g id="front-klem" class="machine-part" data-id="10">
+                            <rect x="210" y="508" width="80" height="32" rx="4" fill="#26262c" stroke="#666"
+                                stroke-width="1.5" />
+                            <rect x="220" y="515" width="18" height="18" rx="2" fill="#111" stroke="#888" />
+                            <rect x="262" y="515" width="18" height="18" rx="2" fill="#111" stroke="#888" />
+                            <rect x="240" y="520" width="22" height="8" rx="3" fill="url(#gradChrome)" stroke="#444" />
+                            <circle cx="251" cy="524" r="5" fill="#1a1a20" stroke="#777" />
+                        </g>
+
+                        <path d="M140,530 L180,540 M200,530 L240,540 M270,530 L310,540" stroke="#111" stroke-width="4"
+                            stroke-linecap="round" opacity="0.5" />
+                    </g>
+
+                    <!-- 5. MOTOR (Housing) -->
+                    <g id="front-motor" class="machine-part" data-id="5">
+                        <path d="M180,50 L420,50 L440,70 L440,200 L180,200 Z" fill="url(#gradMetal)" stroke="#222" />
+                        <rect x="380" y="70" width="110" height="120" rx="8" fill="#1e1e24" stroke="#111" />
+                        <g stroke="#111" stroke-width="3">
+                            <line x1="390" y1="80" x2="480" y2="80" />
+                            <line x1="390" y1="140" x2="480" y2="140" />
+                        </g>
+                        <rect x="220" y="80" width="100" height="40" fill="#111" opacity="0.3" rx="2" />
+                    </g>
+
+                    <!-- 7. HENDEL -->
+                    <g id="front-hendel" class="machine-part" data-id="7">
+                        <circle cx="340" cy="220" r="28" fill="#222" stroke="#444" stroke-width="2" />
+                        <line x1="340" y1="220" x2="440" y2="150" stroke="url(#gradChrome)" stroke-width="10"
+                            stroke-linecap="round" />
+                        <circle cx="445" cy="145" r="14" fill="url(#patKnurl)" stroke="#222" />
+                        <line x1="340" y1="220" x2="440" y2="290" stroke="url(#gradChrome)" stroke-width="10"
+                            stroke-linecap="round" />
+                        <circle cx="445" cy="295" r="14" fill="url(#patKnurl)" stroke="#222" />
+                        <line x1="340" y1="220" x2="240" y2="220" stroke="url(#gradChrome)" stroke-width="10"
+                            stroke-linecap="round" />
+                        <circle cx="235" cy="220" r="14" fill="url(#patKnurl)" stroke="#222" />
+                    </g>
+
+                    <!-- 4. BOORKOP -->
+                    <g id="front-boorkop" class="machine-part" data-id="4">
+                        <rect x="280" y="200" width="40" height="70" fill="url(#gradChrome)" stroke="#555" />
+                        <path d="M285,270 L315,270 L310,330 L290,330 Z" fill="#222" stroke="#111" />
+                        <rect x="286" y="280" width="28" height="15" fill="url(#patKnurl)" stroke="#111" />
+                        <rect x="288" y="305" width="24" height="15" fill="url(#patKnurl)" stroke="#111" />
+                        <g id="front-boor" class="machine-part" data-id="9">
+                            <rect x="298" y="330" width="4" height="90" fill="#ccc" />
+                            <path d="M298,420 L300,430 L302,420" fill="#ccc" />
+                        </g>
+                    </g>
+
+                    <!-- 8. NOODSTOP -->
+                    <g id="front-noodstop" class="machine-part" data-id="8">
+                        <rect x="200" y="150" width="50" height="70" fill="#e0c020" stroke="#aa9010" stroke-width="2"
+                            rx="2" />
+                        <circle cx="225" cy="175" r="18" fill="#d00" stroke="#800" stroke-width="2" />
+                        <circle cx="225" cy="205" r="8" fill="#0a0" stroke="#050" />
+                    </g>
+
+                    <!-- 7. DIEPTE -->
+                    <g id="front-diepte" class="machine-part" data-id="7">
+                        <rect x="260" y="220" width="10" height="140" fill="#bbb" stroke="#777" rx="1" />
+                        <rect x="254" y="290" width="22" height="8" fill="var(--accent-blue)" stroke="#111" rx="2" />
+                    </g>
+
+                    <!-- 6. KAP -->
+                    <g id="front-kap" class="machine-part" data-id="6">
+                        <path d="M250,260 L350,260 L340,370 L260,370 Z" fill="rgba(200,240,255,0.2)"
+                            stroke="rgba(255,255,255,0.4)" />
+                    </g>
+
+                    <!-- === HAZARDS (ONLY VISIBLE IN INSPECTION MODE) === -->
+                    <g id="hazards-layer">
+                        <!-- 1. Sleutel in de kop (Key in chuck) -->
+                        <g id="hazard-key" class="hazard-part" onclick="fixHazard('key', this)">
+                            <rect x="260" y="290" width="40" height="6" fill="#f00" stroke="white" rx="2" />
+                            <!-- handle -->
+                            <rect x="300" y="285" width="6" height="16" fill="#f00" stroke="white" rx="1" />
+                            <!-- shaft -->
+                            <circle cx="260" cy="293" r="5" fill="#f00" stroke="white" />
+                        </g>
+
+                        <!-- 2. Rommel op de vloer (Debris) -->
+                        <g id="hazard-debris" class="hazard-part" onclick="fixHazard('debris', this)">
+                            <path d="M140,820 L160,810 L150,830 Z" fill="#ccc" stroke="red" />
+                            <path d="M460,820 L440,810 L450,830 Z" fill="#ccc" stroke="red" />
+                            <path d="M180,800 L190,790 L200,810 Z" fill="#aaa" stroke="red" />
+                        </g>
+
+                        <!-- 3. Losse Mouw (Sleeve) -->
+                        <g id="hazard-sleeve" class="hazard-part" onclick="fixHazard('sleeve', this)">
+                            <path d="M350,380 Q320,400 310,380 T300,420" fill="none" stroke="red" stroke-width="3"
+                                stroke-dasharray="2,2" />
+                            <text x="360" y="400" fill="red" font-size="12">MOUW!</text>
+                        </g>
+
+                        <!-- 4. Open Kap (Open Guard visual tweak) -->
+                        <g id="hazard-guard" class="hazard-part" onclick="fixHazard('guard', this)">
+                            <!-- Drawn slightly skewed/open -->
+                            <path d="M250,260 L350,260 L380,350 L220,350 Z" fill="rgba(255,0,0,0.1)" stroke="red"
+                                stroke-width="2" stroke-dasharray="5,5" />
+                            <text x="280" y="300" fill="red" font-size="14" font-weight="bold">OPEN!</text>
+                        </g>
+                    </g>
+                </g>
+
+
+                <!-- ================= SIDE VIEW (PROFILE) ================= -->
+                <!-- Initially Hidden -->
+                <g id="view-side" class="machine-view hidden-right" style="opacity: 0; pointer-events: none;">
+
+                    <!-- 1. VOET (Base Side) -->
+                    <g id="side-voet" class="machine-part" data-id="1">
+                        <!-- Long base extending to right (front) -->
+                        <path d="M200,780 L550,780 L540,830 L200,830 Z" fill="#2a2a30" stroke="#111" />
+                        <!-- Vertical mount part -->
+                        <rect x="200" y="760" width="80" height="30" rx="2" fill="#3a3a40" stroke="#111" />
+                    </g>
+
+                    <!-- 2. KOLOM (Column Side) -->
+                    <g id="side-kolom" class="machine-part" data-id="2">
+                        <rect x="220" y="180" width="40" height="580" fill="url(#gradChrome)" stroke="#222" />
+                    </g>
+
+                    <!-- 3. TAFEL (Table Side) -->
+                    <g id="side-tafel" class="machine-part" data-id="3">
+                        <!-- Bracket holding column -->
+                        <rect x="200" y="470" width="80" height="80" rx="5" fill="#333" stroke="#555" />
+                        <!-- Arm extending forward -->
+                        <path d="M280,500 L320,500 L300,550 L280,550" fill="#3a3a45" stroke="#222" />
+                        <!-- Table surface side profile -->
+                        <rect x="280" y="520" width="200" height="15" fill="#2a2a30" stroke="#222" />
+                        <!-- 10. MACHINEKLEM (Clamp) -->
+                        <g id="side-klem" class="machine-part" data-id="10">
+                            <rect x="360" y="500" width="70" height="28" rx="4" fill="#26262c" stroke="#666"
+                                stroke-width="1.5" />
+                            <rect x="370" y="506" width="14" height="14" rx="2" fill="#111" stroke="#888" />
+                            <rect x="404" y="506" width="14" height="14" rx="2" fill="#111" stroke="#888" />
+                        </g>
+
+                        <path d="M280,520 L480,520" stroke="url(#gradMetal)" stroke-width="4" />
+                        <!-- Handle crank side view -->
+                        <circle cx="260" cy="520" r="5" fill="#111" />
+                        <line x1="260" y1="520" x2="230" y2="560" stroke="#888" stroke-width="5"
+                            stroke-linecap="round" />
+                        <circle cx="230" cy="560" r="6" fill="#111" />
+                    </g>
+
+                    <!-- 5. MOTOR (Head Side Profile) -->
+                    <g id="side-motor" class="machine-part" data-id="5">
+                        <!-- Main Head Casting -->
+                        <path d="M200,50 L450,50 L450,150 L350,180 L200,180 Z" fill="url(#gradMetal)" stroke="#222" />
+                        <!-- Motor hanging off back (Left side) -->
+                        <rect x="130" y="80" width="80" height="100" rx="5" fill="#1e1e24" stroke="#111" />
+                        <line x1="140" y1="90" x2="200" y2="90" stroke="#333" stroke-width="2" />
+                        <line x1="140" y1="105" x2="200" y2="105" stroke="#333" stroke-width="2" />
+                        <!-- Belt cover top detail -->
+                        <rect x="180" y="45" width="200" height="10" fill="#222" />
+                    </g>
+
+                    <!-- 7. HENDEL (Side View - distinct hub) -->
+                    <g id="side-hendel" class="machine-part" data-id="7">
+                        <circle cx="360" cy="220" r="20" fill="#222" stroke="#444" />
+                        <!-- Arm sticking towards viewer -->
+                        <line x1="360" y1="220" x2="400" y2="280" stroke="url(#gradChrome)" stroke-width="8"
+                            stroke-linecap="round" />
+                        <circle cx="400" cy="285" r="10" fill="url(#patKnurl)" stroke="#222" />
+                    </g>
+
+                    <!-- 4. BOORKOP (Side View) -->
+                    <g id="side-boorkop" class="machine-part" data-id="4">
+                        <rect x="350" y="180" width="30" height="80" fill="url(#gradChrome)" stroke="#555" />
+                        <!-- Quill -->
+                        <!-- Chuck -->
+                        <path d="M350,260 L380,260 L375,320 L355,320 Z" fill="#222" stroke="#111" />
+                        <rect x="352" y="270" width="26" height="10" fill="url(#patKnurl)" />
+                        <!-- Drill -->
+                        <g id="side-boor" class="machine-part" data-id="9">
+                            <rect x="363" y="320" width="4" height="80" fill="#ccc" />
+                        </g>
+                    </g>
+
+                    <!-- 8. NOODSTOP (Side View - Box sticking out) -->
+                    <g id="side-noodstop" class="machine-part" data-id="8">
+                        <rect x="300" y="150" width="15" height="40" fill="#e0c020" stroke="#aa9010" />
+                        <!-- Button Profile -->
+                        <path d="M315,160 L325,160 L325,175 L315,175 Z" fill="#d00" />
+                    </g>
+
+                    <!-- 6. KAP (Guard Profile) -->
+                    <g id="side-kap" class="machine-part" data-id="6">
+                        <path d="M340,250 L400,250 L390,360 L340,360 Z" fill="rgba(200,240,255,0.2)"
+                            stroke="rgba(255,255,255,0.4)" />
+                    </g>
+
+                </g>
+
+            </svg>
+
+            <div class="legend">
+                <div class="scanner-line"></div>
+                <span>Scanner Actief</span>
+            </div>
+        </div>
+
+        <div class="panel-container">
+
+            <div class="mode-switch" id="mode-switch">
+                <button class="mode-btn active" data-mode="info" onclick="switchMode('info')">Info</button>
+                <button class="mode-btn" data-mode="mistakes" onclick="switchMode('mistakes')">Fouten</button>
+                <button class="mode-btn inspector-mode" data-mode="inspector"
+                    onclick="switchMode('inspector')">Inspectie</button>
+                <button class="mode-btn" data-mode="drill" onclick="switchMode('drill')">Boren</button>
+                <button class="mode-btn" data-mode="quiz" onclick="switchMode('quiz')">Quiz</button>
+            </div>
+
+            <!-- INFO SECTION -->
+            <div id="info-section" class="content-section active">
+                <div id="default-msg" style="text-align: center; color: var(--text-muted);">
+                    <div style="font-size: 3rem; margin-bottom: 20px; color: var(--accent-purple);">✇</div>
+                    <h3 style="color: white; margin-bottom: 10px;">Selecteer een onderdeel</h3>
+                    <p>Klik op de onderdelen van de machine om hun functie en veiligheidsregels te zien.</p>
+                </div>
+
+                <div id="info-card" class="info-card">
+                    <div class="card-header">
+                        <div class="part-number" id="card-id">01</div>
+                        <div class="part-title" id="card-title">ONDERDEEL</div>
+                    </div>
+                    <div class="part-description" id="card-desc"></div>
+                    <div class="safety-box">
+                        <div class="safety-title">⚠️ Veiligheids Check</div>
+                        <div id="card-safety"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUIZ SECTION -->
+            <div id="quiz-section" class="content-section">
+                <div id="quiz-start" style="text-align: center; margin-top: 40px;">
+                    <h2 style="color:white; margin-bottom: 20px;">Test je kennis!</h2>
+                    <p style="color:#aaa; margin-bottom: 30px;">7 vragen over onderdelen en veiligheid.</p>
+                    <button class="restart-btn" onclick="startQuiz()">Start Quiz</button>
+                </div>
+
+                <div id="quiz-active" class="quiz-card" style="display:none;">
+                    <div class="quiz-header">
+                        <span>Vraag <span id="q-current">1</span>/7</span>
+                        <span>Score: <span id="q-score">0</span></span>
+                    </div>
+                    <div class="question-text" id="q-text">Vraag tekst...</div>
+                    <div class="options-grid" id="q-options">
+                        <!-- Options generated by JS -->
+                    </div>
+                    <div id="q-feedback"
+                        style="min-height: 20px; margin-top: 15px; font-size: 0.9rem; font-weight: bold;"></div>
+                    <button id="next-btn" class="restart-btn"
+                        style="margin-top:20px; display:none; width:100%; background: var(--accent-purple); color:white;"
+                        onclick="nextQuestion()">Volgende</button>
+                </div>
+
+                <div id="quiz-end" class="quiz-result">
+                    <div class="score-circle" id="final-score">7/7</div>
+                    <h2 style="color: white;">Quiz Voltooid!</h2>
+                    <p id="final-msg" style="color: #aaa;">Goed gedaan!</p>
+                    <button class="restart-btn" onclick="startQuiz()">Opnieuw</button>
+                </div>
+            </div>
+
+            <!-- DRILL SECTION (NEW) -->
+            <div id="drill-section" class="content-section">
+                <div class="drill-card">
+                    <h3 style="color:white; margin-bottom:10px;">Boren (Simulatie)</h3>
+                    <p style="color:#aaa; margin-bottom:15px;">Zet alles veilig, en start dan de booractie.</p>
+
+                    <div class="drill-grid">
+                        <button class="drill-toggle" id="toggle-clamp" onclick="toggleClamp()">🗜️ Klem: UIT</button>
+                        <button class="drill-toggle" id="toggle-guard" onclick="toggleGuard()">🛡️ Kap: DICHT</button>
+                        <button class="drill-toggle" id="toggle-key" onclick="toggleKey()">🔑 Sleutel:
+                            VERWIJDERD</button>
+                    </div>
+
+                    <div class="drill-actions">
+                        <button class="drill-action primary" id="btn-drill" onclick="startDrilling()">▶️ Start
+                            boren</button>
+                        <button class="drill-action danger" onclick="emergencyStop()">🛑 Noodstop</button>
+                        <button class="drill-action" onclick="resetDrill()">↩️ Reset</button>
+                    </div>
+
+                    <div class="drill-status" id="drill-status">Status: klaar.</div>
+                </div>
+            </div>
+
+            <!-- FAIL MODAL -->
+            <div id="fail-modal" class="fail-modal" role="dialog" aria-modal="true" aria-labelledby="fail-title"
+                style="display:none;">
+                <div class="fail-backdrop" onclick="hideFailModal()"></div>
+                <div class="fail-box">
+                    <div class="fail-title" id="fail-title">FAIL ⚠️</div>
+                    <div class="fail-msg" id="fail-msg">Fout.</div>
+                    <div class="fail-actions">
+                        <button class="fail-btn primary" onclick="hideFailModal()">OK</button>
+                    </div>
+                </div>
+            </div>
+            <div id="screen-flash" class="screen-flash" style="display:none;"></div>
+
+            <!-- MISTAKES SECTION -->
+            <div id="mistakes-section" class="content-section mistakes-content">
+                <h3
+                    style="color: white; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+                    <span style="color:var(--accent-pink);">⚠️</span> 5 Meest Voorkomende Fouten
+                </h3>
+
+                <div class="mistake-card">
+                    <div class="mistake-icon">🧥</div>
+                    <div class="mistake-text">
+                        <h4>Losse Kleding & Haren</h4>
+                        <p>Losse mouwen, sjaals of lang haar niet vastbinden. Dit kan vastdraaien in de machine met
+                            ernstige gevolgen.</p>
+                    </div>
+                </div>
+
+                <div class="mistake-card">
+                    <div class="mistake-icon">🤚</div>
+                    <div class="mistake-text">
+                        <h4>Werkstuk Vasthouden</h4>
+                        <p>Het materiaal met de hand vasthouden in plaats van een machineklem. Als de boor hapt, slaat
+                            het werkstuk weg.</p>
+                    </div>
+                </div>
+
+                <div class="mistake-card">
+                    <div class="mistake-icon">🔑</div>
+                    <div class="mistake-text">
+                        <h4>Sleutel Laten Zitten</h4>
+                        <p>De boorsleutel in de kop laten zitten na het spannen. Bij het starten vliegt deze weg als een
+                            projectiel.</p>
+                    </div>
+                </div>
+
+                <div class="mistake-card">
+                    <div class="mistake-icon">🐢</div>
+                    <div class="mistake-text">
+                        <h4>Verkeerd Toerental</h4>
+                        <p>Te snel boren in hard metaal (boor verbrandt) of te langzaam in zacht materiaal. Pas je
+                            snelheid aan!</p>
+                    </div>
+                </div>
+
+                <div class="mistake-card">
+                    <div class="mistake-icon">👓</div>
+                    <div class="mistake-text">
+                        <h4>Geen Veiligheidsbril</h4>
+                        <p>"Even snel een gaatje boren" zonder bril. Hete metaalsplinters kunnen in je ogen komen.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INSPECTOR SECTION (NEW) -->
+            <div id="inspector-section" class="content-section">
+                <div id="inspector-intro" style="text-align: center; margin-top: 20px;">
+                    <h2 style="color: var(--danger-red); text-transform:uppercase; margin-bottom:10px;">Safety Inspector
+                    </h2>
+                    <p style="color:#ccc; margin-bottom:20px;">Er zijn <strong>4 gevaren</strong> verstopt op deze
+                        machine. Vind en klik ze aan voordat de tijd op is!</p>
+                    <button class="restart-btn start-btn-red" onclick="startInspection()">Start Inspectie</button>
+                </div>
+
+                <div id="inspector-active" class="inspector-card" style="display:none;">
+                    <div class="inspector-header">
+                        <div
+                            style="display:flex; justify-content:space-between; color:white; font-weight:bold; margin-bottom:5px;">
+                            <span>TIJD</span>
+                            <span>GEVAREN: <span id="hazards-found">0</span>/4</span>
+                        </div>
+                        <div class="timer-bar-container">
+                            <div class="timer-bar" id="timer-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="hazard-list">
+                        <div class="hazard-item" id="list-key"><span class="hazard-icon">🔑</span> Boorsleutel vergeten
+                        </div>
+                        <div class="hazard-item" id="list-guard"><span class="hazard-icon">🛡️</span> Kap staat open
+                        </div>
+                        <div class="hazard-item" id="list-debris"><span class="hazard-icon">🧹</span> Rommel op voet
+                        </div>
+                        <div class="hazard-item" id="list-sleeve"><span class="hazard-icon">👕</span> Losse mouw</div>
+                    </div>
+                </div>
+
+                <div id="inspector-win" class="quiz-result">
+                    <div class="score-circle" style="border-color:var(--success-green); color:var(--success-green);">
+                        100%</div>
+                    <h2 style="color: white;">Machine Veilig!</h2>
+                    <p style="color: #aaa;">Geweldig inspectiewerk. Je hebt een ongeluk voorkomen.</p>
+                    <button class="restart-btn" onclick="startInspection()">Nog eens</button>
+                </div>
+
+                <div id="inspector-fail" class="quiz-result">
+                    <div class="score-circle" style="border-color:var(--danger-red); color:var(--danger-red);">FAIL
+                    </div>
+                    <h2 style="color: white;">Tijd is om!</h2>
+                    <p style="color: #aaa;">Je hebt niet alle gevaren gevonden. Probeer het opnieuw.</p>
+                    <button class="restart-btn" onclick="startInspection()">Opnieuw</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module">
+        import { SimulationManager } from './simulation.js';
+        // CONFIG: Real Keys from School Hub
+        const SUPABASE_URL = 'https://uxzcnsudhkcfvzbzmztu.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_HopNY-2WwjBmjhNHNj0GtA_rccvAV8C';
+
+        // Initialize Manager
+        const simManager = new SimulationManager(SUPABASE_URL, SUPABASE_KEY);
+        simManager.setMachineType('drill_press');
+
+        // Check auth on load
+        simManager.checkAuth();
+
+        // Expose to global scope for existing onclick handlers
+        window.simManager = simManager;
+
+        // EXPOSE FUNCTIONS TO WINDOW (Required because type="module" has its own scope)
+        window.rotateView = rotateView;
+        window.switchMode = switchMode;
+        window.handlePartClick = handlePartClick;
+        window.startInspection = startInspection;
+        window.fixHazard = fixHazard;
+        window.startQuiz = startQuiz;
+        window.checkAnswer = checkAnswer; // If used in HTML
+        window.nextQuestion = nextQuestion;
+        window.toggleClamp = toggleClamp;
+        window.toggleGuard = toggleGuard;
+        window.toggleKey = toggleKey;
+        window.startDrilling = startDrilling;
+        window.emergencyStop = emergencyStop;
+        window.resetDrill = resetDrill;
+        window.hideFailModal = hideFailModal;
+
+        const machineData = {
+            1: {
+                title: "De Voet",
+                desc: "De zware gietijzeren basis die zorgt voor stabiliteit. Hij moet stevig op de grond staan, eventueel verankerd met bouten, om trillingen en omvallen te voorkomen.",
+                safety: "Houd de vloer rond de voet vrij van spanen, olie en rommel om uitglijden te voorkomen."
+            },
+            2: {
+                title: "De Kolom",
+                desc: "De stalen pilaar waar alles aan hangt. Via een tandheugel (in sommige modellen) kan de tafel langs deze kolom omhoog en omlaag bewegen.",
+                safety: "De kolom moet schoon en licht geolied blijven. Hang er geen kleding of poetsdoeken aan."
+            },
+            3: {
+                title: "De Boortafel",
+                desc: "Het plateau waarop je werkt. Het is verstelbaar in hoogte en vaak kantelbaar. In de sleuven kun je de machineklem vastzetten.",
+                safety: "Klem je werkstuk ALTIJD vast op de tafel of in een machineklem. Houd het NOOIT met de hand vast!"
+            },
+            4: {
+                title: "De Boorkop",
+                desc: "De klembek die de boor vasthoudt. Vaak een snelspanboorkop (met de hand) of een tandkransboorkop (met een sleutel).",
+                safety: "VERWIJDER DE BOORSLEUTEL DIRECT na het vastzetten. Als je de machine start met de sleutel erin, is dit een levensgevaarlijk projectiel."
+            },
+
+            9: {
+                title: "De Boor",
+                desc: "Het snijgereedschap dat het gat maakt. De keuze van boortype (HSS, cobalt), diameter en de toestand (scherp/bot) bepaalt het resultaat.",
+                safety: "Kies de juiste boor voor het materiaal en span hem stevig. Gebruik geen beschadigde of botte boren."
+            },
+            10: {
+                title: "De Machineklem",
+                desc: "De klem houdt je werkstuk vast zodat het niet kan draaien of wegschieten. Dit is één van de belangrijkste veiligheidsmiddelen aan de kolomboor.",
+                safety: "Werkstuk altijd vast in klem of opspanning. Nooit met de hand vasthouden."
+            },
+
+            5: {
+                title: "Motor & Aandrijving",
+                desc: "De elektromotor drijft via V-snaren de boorspil aan. Door de snaren op andere poelies te leggen, verander je het toerental (snelheid).",
+                safety: "Open de beschermkap van de V-snaren alleen als de STROOM UIT staat (stekker eruit)."
+            },
+            6: {
+                title: "Beschermkap",
+                desc: "Een transparant schild tussen jouw gezicht en de boor. Het houdt rondvliegende metaalkrullen (spanen) tegen.",
+                safety: "De kap moet gesloten zijn voordat je boort. Draag daarnaast ALTIJD een veiligheidsbril."
+            },
+            7: {
+                title: "Hendel & Diepte",
+                desc: "De stervormige hendel waarmee je de boor naar beneden drukt (voeding). De diepte-aanslag zorgt dat je niet te diep boort.",
+                safety: "Oefen gelijkmatige druk uit. Niet 'hangen' aan de hendel. Laat de boor het snijwerk doen."
+            },
+            8: {
+                title: "Noodstop",
+                desc: "De opvallende rode knop (paddenstoel) die de machine direct uitschakelt en vergrendelt in geval van nood.",
+                safety: "Test regelmatig of de noodstop werkt. Gebruik hem alleen in noodgevallen, niet als normale aan/uit knop."
+            }
+        };
+
+        // --- QUIZ DATA ---
+        const quizQuestions = [
+            {
+                q: "Wat is de belangrijkste functie van de beschermkap?",
+                options: ["Het geluid dempen", "Metaalspanen tegenhouden", "De boor koelen", "De boor recht houden"],
+                correct: 1
+            },
+            {
+                q: "Je wilt een werkstuk boren. Hoe houd je dit vast?",
+                options: ["Stevig met beide handen", "Met een griptang", "Vastgeklemd in de machineklem", "Je vraagt een klasgenoot om te helpen"],
+                correct: 2
+            },
+            {
+                q: "Wat MOET je doen na het vastzetten van de boor met een sleutel?",
+                options: ["De sleutel direct verwijderen", "De sleutel aan de kolom hangen", "De sleutel in de boorkop laten", "De sleutel invetten"],
+                correct: 0
+            },
+            {
+                q: "Waarvoor dient de Noodstop?",
+                options: ["Om de machine pauze te laten nemen", "Als normale uit-knop", "Om de snelheid te regelen", "Om bij gevaar direct de stroom te onderbreken"],
+                correct: 3
+            },
+            {
+                q: "Met welk onderdeel beweeg je de boor naar beneden?",
+                options: ["De V-snaar", "De Hendel", "De Kolom", "De Voet"],
+                correct: 1
+            },
+            {
+                q: "Wat mag je NOOIT dragen tijdens het werken met draaiende machines?",
+                options: ["Veiligheidsschoenen", "Een veiligheidsbril", "Loshangende kleding, sjaals of sieraden", "Gehoorbescherming"],
+                correct: 2
+            },
+            {
+                q: "Hoe verander je de snelheid (toerental) van de boor?",
+                options: ["Door harder aan de hendel te trekken", "Door de riemen (V-snaren) te verleggen", "Door de noodstop half in te drukken", "Dat kan niet bij een kolomboormachine"],
+                correct: 1
+            }
+        ];
+
+        // --- STATE VARIABLES ---
+        let currentQuizIndex = 0;
+        let score = 0;
+        let quizActive = false;
+        let currentView = 'front'; // front or side
+
+        // INSPECTOR STATE
+        let inspectorActive = false;
+        let hazardsFixed = 0;
+        let inspectorTimer = null;
+        let timeLeft = 30;
+
+        // --- DOM ELEMENTS ---
+        const parts = document.querySelectorAll('.machine-part');
+        const infoCard = document.getElementById('info-card');
+        const defaultMsg = document.getElementById('default-msg');
+
+        const cardId = document.getElementById('card-id');
+        const cardTitle = document.getElementById('card-title');
+        const cardDesc = document.getElementById('card-desc');
+        const cardSafety = document.getElementById('card-safety');
+
+        const sectionInfo = document.getElementById('info-section');
+        const sectionQuiz = document.getElementById('quiz-section');
+        const sectionMistakes = document.getElementById('mistakes-section');
+        const sectionInspector = document.getElementById('inspector-section');
+        const sectionDrill = document.getElementById('drill-section');
+        const modeBtns = document.querySelectorAll('#mode-switch .mode-btn');
+
+        const viewFront = document.getElementById('view-front');
+        const viewSide = document.getElementById('view-side');
+        const viewLabel = document.getElementById('view-label');
+
+        const hazards = document.querySelectorAll('.hazard-part');
+
+        // --- VIEW ROTATION LOGIC ---
+        function rotateView(dir) {
+            // Force Front view if inspection is active (hazards are only on front)
+            if (inspectorActive && currentView === 'front') {
+                alert("Voltooi eerst de inspectie op het vooraanzicht!");
+                return;
+            }
+
+            // dir: 1 (right) or -1 (left)
+            if (currentView === 'front') {
+                // Switch to SIDE
+                currentView = 'side';
+                viewFront.classList.remove('active');
+                viewFront.classList.add(dir > 0 ? 'hidden-left' : 'hidden-right');
+
+                viewSide.style.opacity = '1';
+                viewSide.style.pointerEvents = 'all';
+                viewSide.classList.remove('hidden-left', 'hidden-right');
+                viewSide.classList.add('active');
+
+                viewLabel.textContent = "ZIJAANZICHT";
+            } else {
+                // Switch to FRONT
+                currentView = 'front';
+                viewSide.classList.remove('active');
+                viewSide.classList.add(dir > 0 ? 'hidden-left' : 'hidden-right');
+                viewSide.style.opacity = '0';
+                viewSide.style.pointerEvents = 'none';
+
+                viewFront.classList.remove('hidden-left', 'hidden-right');
+                viewFront.classList.add('active');
+
+                viewLabel.textContent = "VOORAANZICHT";
+            }
+        }
+
+        // --- INTERACTION LOGIC ---
+
+        function switchMode(mode) {
+            // Stop inspector if switching away
+            if (inspectorActive && mode !== 'inspector') {
+                clearInterval(inspectorTimer);
+                inspectorActive = false;
+                hazards.forEach(h => h.classList.remove('visible'));
+            }
+
+            // Deactivate buttons
+            modeBtns.forEach(btn => btn.classList.remove('active'));
+
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+
+            // Activate requested section
+            if (mode === 'info') {
+                sectionInfo.classList.add('active');
+            } else if (mode === 'quiz') {
+                sectionQuiz.classList.add('active');
+            } else if (mode === 'drill') {
+                sectionDrill.classList.add('active');
+                // Zoom in (closer view) for drilling if available
+                try { if (typeof setDrillZoom === 'function') setDrillZoom(true); } catch (e) { }
+            } else if (mode === 'mistakes') {
+                sectionMistakes.classList.add('active');
+            } else if (mode === 'inspector') {
+                sectionInspector.classList.add('active');
+                // Ensure front view for inspector
+                if (currentView === 'side') rotateView(1);
+            }
+
+            // If leaving drill, zoom out
+            if (mode !== 'drill') {
+                try { if (typeof setDrillZoom === 'function') setDrillZoom(false); } catch (e) { }
+            }
+
+            // Activate corresponding button (by data-mode)
+            const btn = document.querySelector(`#mode-switch .mode-btn[data-mode="${mode}"]`);
+            if (btn) btn.classList.add('active');
+        }
+
+
+
+
+        function handlePartClick(e) {
+            // If inspecting, ignore normal parts
+            if (inspectorActive) return;
+
+            if (!sectionInfo.classList.contains('active')) {
+                switchMode('info');
+            }
+
+            const partGroup = e.target.closest('.machine-part');
+            if (!partGroup) return;
+
+            const id = partGroup.getAttribute('data-id');
+            const data = machineData[id];
+
+            if (data) {
+                // Remove active class from ALL parts in ALL views
+                parts.forEach(p => p.classList.remove('active'));
+
+                // Add active to clicked part
+                partGroup.classList.add('active');
+
+                defaultMsg.style.display = 'none';
+                infoCard.classList.remove('visible');
+
+                setTimeout(() => {
+                    cardId.textContent = "0" + id;
+                    cardTitle.textContent = data.title;
+                    cardDesc.textContent = data.desc;
+                    cardSafety.textContent = data.safety;
+                    infoCard.style.display = 'block';
+                    void infoCard.offsetWidth;
+                    infoCard.classList.add('visible');
+                }, 50);
+            }
+        }
+
+        parts.forEach(part => {
+            part.addEventListener('click', handlePartClick);
+            part.addEventListener('touchstart', (e) => { e.preventDefault(); handlePartClick(e); });
+        });
+
+        // --- INSPECTOR LOGIC ---
+        function startInspection() {
+            inspectorActive = true;
+            hazardsFixed = 0;
+            timeLeft = 30;
+
+            // Reset UI
+            document.getElementById('inspector-intro').style.display = 'none';
+            document.getElementById('inspector-win').style.display = 'none';
+            document.getElementById('inspector-fail').style.display = 'none';
+            document.getElementById('inspector-active').style.display = 'flex';
+
+            document.getElementById('hazards-found').textContent = '0';
+            document.querySelectorAll('.hazard-item').forEach(el => el.classList.remove('found'));
+
+            // Show Hazards
+            hazards.forEach(h => {
+                h.classList.remove('fixed');
+                h.classList.add('visible');
+            });
+
+            // Start Timer
+            clearInterval(inspectorTimer);
+            updateTimerBar();
+            inspectorTimer = setInterval(() => {
+                timeLeft--;
+                updateTimerBar();
+                if (timeLeft <= 0) {
+                    endInspection(false);
+                }
+            }, 1000);
+        }
+
+        function updateTimerBar() {
+            const pct = (timeLeft / 30) * 100;
+            const bar = document.getElementById('timer-bar');
+            bar.style.width = pct + '%';
+            if (pct < 30) bar.style.backgroundColor = 'red';
+            else bar.style.backgroundColor = '#00d4ff'; // Blue normally
+        }
+
+        function fixHazard(type, element) {
+            if (!inspectorActive) return;
+
+            // Prevent double click
+            if (element.classList.contains('fixed')) return;
+
+            // Visual fix
+            element.classList.add('fixed'); // Hides it via CSS
+
+            // Update List
+            document.getElementById('list-' + type).classList.add('found');
+
+            // Score
+            hazardsFixed++;
+            document.getElementById('hazards-found').textContent = hazardsFixed;
+
+            // Win check
+            if (hazardsFixed >= 4) {
+                endInspection(true);
+            }
+        }
+
+        function endInspection(won) {
+            clearInterval(inspectorTimer);
+            inspectorActive = false;
+            document.getElementById('inspector-active').style.display = 'none';
+
+            if (won) {
+                document.getElementById('inspector-win').style.display = 'flex';
+                // Save Result REMOVED per user request
+                // window.simManager.saveResult('inspector', 100);
+            } else {
+                document.getElementById('inspector-fail').style.display = 'flex';
+            }
+        }
+
+        // --- QUIZ LOGIC ---
+
+        function startQuiz() {
+            currentQuizIndex = 0;
+            score = 0;
+            quizActive = true;
+            document.getElementById('quiz-start').style.display = 'none';
+            document.getElementById('quiz-end').style.display = 'none';
+            document.getElementById('quiz-active').style.display = 'flex';
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const qData = quizQuestions[currentQuizIndex];
+            document.getElementById('q-current').textContent = currentQuizIndex + 1;
+            document.getElementById('q-score').textContent = score;
+            document.getElementById('q-text').textContent = qData.q;
+            document.getElementById('q-feedback').textContent = "";
+            document.getElementById('next-btn').style.display = 'none';
+
+            const optsDiv = document.getElementById('q-options');
+            optsDiv.innerHTML = '';
+
+            qData.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = opt;
+                btn.onclick = () => checkAnswer(index, btn);
+                optsDiv.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(b => b.disabled = true);
+
+            const correctIndex = quizQuestions[currentQuizIndex].correct;
+
+            if (selectedIndex === correctIndex) {
+                btnElement.classList.add('correct');
+                score++;
+                document.getElementById('q-feedback').textContent = "Correct! ✅";
+                document.getElementById('q-feedback').style.color = "#0f0";
+            } else {
+                btnElement.classList.add('wrong');
+                allBtns[correctIndex].classList.add('correct');
+                document.getElementById('q-feedback').textContent = "Fout! Het juiste antwoord is groen gemarkeerd.";
+                document.getElementById('q-feedback').style.color = "#f55";
+            }
+
+            document.getElementById('q-score').textContent = score;
+            document.getElementById('next-btn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQuizIndex++;
+            if (currentQuizIndex < quizQuestions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-active').style.display = 'none';
+            document.getElementById('quiz-end').style.display = 'flex';
+            const finalScoreEl = document.getElementById('final-score');
+            finalScoreEl.textContent = `${score}/${quizQuestions.length}`;
+
+            const msgEl = document.getElementById('final-msg');
+            if (score === 7) msgEl.textContent = "Perfect! Jij bent een expert! 🏆";
+            else if (score >= 5) msgEl.textContent = "Goed gedaan! Je kent de machine goed. 👍";
+            else msgEl.textContent = "Blijf oefenen en lees de info nog eens door. 📚";
+
+            // Save Result
+            window.simManager.saveResult('quiz', Math.round((score / quizQuestions.length) * 100));
+        }
+
+
+
+        // --- DRILL MODE STATE (NEW) ---
+        let drillClampOn = false;
+        let drillGuardClosed = true;
+        let drillKeyRemoved = true;
+        let drilling = false;
+
+        // Drill SVG references (front view)
+        const drillBitFront = document.querySelector('#front-boor rect') || null;
+
+        // Chips layer in front view
+        let chipsLayer = null;
+        function ensureChipsLayer() {
+            if (chipsLayer) return chipsLayer;
+            const frontView = document.getElementById('view-front');
+            chipsLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            chipsLayer.setAttribute("id", "chips-layer");
+            frontView.appendChild(chipsLayer);
+            return chipsLayer;
+        }
+
+        // WebAudio: motor hum + warning beep (self-contained)
+        let audioCtx = null;
+        let motorOsc = null;
+        let motorGain = null;
+
+        function getAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioCtx;
+        }
+
+        function startMotorSound() {
+            try {
+                const ctx = getAudio();
+                if (motorOsc) return;
+                motorOsc = ctx.createOscillator();
+                motorGain = ctx.createGain();
+                motorOsc.type = "sawtooth";
+                motorOsc.frequency.value = 110; // hum
+                motorGain.gain.value = 0.0001;
+                motorOsc.connect(motorGain).connect(ctx.destination);
+                motorOsc.start();
+                motorGain.gain.setTargetAtTime(0.05, ctx.currentTime, 0.05);
+            } catch (e) { }
+        }
+
+        function stopMotorSound() {
+            try {
+                if (!motorOsc) return;
+                const ctx = getAudio();
+                motorGain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.04);
+                setTimeout(() => {
+                    try { motorOsc.stop(); } catch (e) { }
+                    motorOsc = null;
+                    motorGain = null;
+                }, 140);
+            } catch (e) { }
+        }
+
+        function beep() {
+            try {
+                const ctx = getAudio();
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = "square";
+                o.frequency.value = 880;
+                g.gain.value = 0.0001;
+                o.connect(g).connect(ctx.destination);
+                o.start();
+                g.gain.setTargetAtTime(0.14, ctx.currentTime, 0.01);
+                g.gain.setTargetAtTime(0.0001, ctx.currentTime + 0.09, 0.02);
+                o.stop(ctx.currentTime + 0.14);
+            } catch (e) { }
+        }
+
+        // FAIL feedback
+        function flashRed() {
+            const el = document.getElementById('screen-flash');
+            if (!el) return;
+            el.style.display = 'block';
+            el.style.opacity = '1';
+            setTimeout(() => { el.style.opacity = '0'; }, 140);
+            setTimeout(() => { el.style.display = 'none'; }, 320);
+        }
+        function showFailModal(msg) {
+            const modal = document.getElementById('fail-modal');
+            const m = document.getElementById('fail-msg');
+            if (m) m.textContent = msg;
+            if (modal) modal.style.display = 'block';
+        }
+        function hideFailModal() {
+            const modal = document.getElementById('fail-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        // Drill UI
+        function syncDrillUI() {
+            const bClamp = document.getElementById('toggle-clamp');
+            const bGuard = document.getElementById('toggle-guard');
+            const bKey = document.getElementById('toggle-key');
+            const btn = document.getElementById('btn-drill');
+
+            if (bClamp) bClamp.textContent = `🗜️ Klem: ${drillClampOn ? 'AAN' : 'UIT'}`;
+            if (bGuard) bGuard.textContent = `🛡️ Kap: ${drillGuardClosed ? 'DICHT' : 'OPEN'}`;
+            if (bKey) bKey.textContent = `🔑 Sleutel: ${drillKeyRemoved ? 'VERWIJDERD' : 'IN KOP'}`;
+
+            // Safety interlock
+            if (btn) {
+                btn.disabled = (!drillGuardClosed) || drilling;
+                btn.textContent = btn.disabled && !drilling ? "🔒 Start boren (kap dicht!)" : "▶️ Start boren";
+            }
+        }
+
+        function setDrillStatus(text, ok = true) {
+            const status = document.getElementById('drill-status');
+            if (!status) return;
+            status.textContent = "Status: " + text;
+            status.style.borderColor = ok ? 'rgba(0,255,100,0.35)' : 'rgba(255,50,50,0.55)';
+        }
+
+        function toggleClamp() { drillClampOn = !drillClampOn; syncDrillUI(); }
+        function toggleGuard() { drillGuardClosed = !drillGuardClosed; syncDrillUI(); }
+        function toggleKey() { drillKeyRemoved = !drillKeyRemoved; syncDrillUI(); }
+
+        function emergencyStop() {
+            stopMotorSound();
+            drilling = false;
+            resetChips();
+            resetDrillBit();
+            setDrillStatus("NOODSTOP! Machine uit.", false);
+            syncDrillUI();
+        }
+
+        function resetDrill() {
+            stopMotorSound();
+            drilling = false;
+            resetChips();
+            resetDrillBit();
+            setDrillStatus("klaar.", true);
+            syncDrillUI();
+        }
+
+        function resetChips() {
+            if (!chipsLayer) return;
+            while (chipsLayer.firstChild) chipsLayer.removeChild(chipsLayer.firstChild);
+        }
+
+        let drillAnim = null;
+        let drillStartY = null;
+
+        function resetDrillBit() {
+            if (!drillBitFront) return;
+            if (drillStartY === null) {
+                drillStartY = parseFloat(drillBitFront.getAttribute('y')) || 330;
+            }
+            drillBitFront.setAttribute('y', drillStartY);
+        }
+
+        // --- PHYSICS & ANIMATION ---
+
+        function spawnChip(x, y) {
+            const g = ensureChipsLayer();
+            const c = document.createElementNS("http://www.w3.org/2000/svg", "rect"); // Rects rotate better visually
+            const size = 2 + Math.random() * 3;
+            c.setAttribute("x", x);
+            c.setAttribute("y", y);
+            c.setAttribute("width", size);
+            c.setAttribute("height", size * 0.6);
+            c.setAttribute("fill", Math.random() > 0.7 ? "#fff" : "#888"); // Sparkle vs Metal
+
+            // Physics properties
+            c.dataset.vx = (Math.random() - 0.5) * 8; // Spread wide
+            c.dataset.vy = -(Math.random() * 5 + 2); // Upward burst
+            c.dataset.rot = Math.random() * 360;
+            c.dataset.vRot = (Math.random() - 0.5) * 40; // Spin speed
+            c.dataset.life = 60 + Math.random() * 30;
+
+            g.appendChild(c);
+        }
+
+        function tickChips() {
+            if (!chipsLayer) return;
+
+            const children = Array.from(chipsLayer.children);
+            if (children.length === 0) return;
+
+            children.forEach(n => {
+                let life = parseFloat(n.dataset.life) - 1;
+                n.dataset.life = life;
+
+                // Physics
+                let vx = parseFloat(n.dataset.vx);
+                let vy = parseFloat(n.dataset.vy);
+                let rot = parseFloat(n.dataset.rot);
+                let vRot = parseFloat(n.dataset.vRot);
+
+                let x = parseFloat(n.getAttribute('x'));
+                let y = parseFloat(n.getAttribute('y'));
+
+                // Gravity & Friction
+                vy += 0.4; // Gravity
+                vx *= 0.95; // Air resistance
+
+                x += vx;
+                y += vy;
+                rot += vRot;
+
+                n.setAttribute('x', x);
+                n.setAttribute('y', y);
+                n.setAttribute('transform', `rotate(${rot}, ${x}, ${y})`);
+
+                // Fade out
+                if (life < 20) {
+                    n.setAttribute('opacity', life / 20);
+                }
+
+                if (life <= 0) n.remove();
+            });
+        }
+
+        function startDrilling() {
+            if (drilling) return;
+
+            if (!drillGuardClosed) { failDrill("Kap staat open. Sluit de kap!"); return; }
+            if (!drillKeyRemoved) { failDrill("Sleutel zit nog in de boorkop!"); return; }
+            if (!drillClampOn) { failDrill("Werkstuk is niet geklemd!"); return; }
+
+            drilling = true;
+            syncDrillUI();
+            setDrillStatus("BOREN... ⚠️", true);
+            startMotorSound();
+
+            // Vibration effect (Subtle, on the drill bit only)
+            if (drillBitFront) drillBitFront.classList.add('vibrating');
+
+            if (!drillBitFront) {
+                setTimeout(successDrill, 1000);
+                return;
+            }
+
+            if (drillStartY === null) {
+                drillStartY = parseFloat(drillBitFront.getAttribute('y')) || 330;
+            }
+
+            const targetDepth = 60;
+            let progress = 0;
+            let direction = 1; // 1 = down, -1 = up
+            let speed = 0.015;
+
+            function animate() {
+                if (!drilling) return; // Stop if interrupted
+
+                // Easing logic (Sine wave for smooth up/down)
+                progress += speed * direction;
+
+                // Clamp progress
+                if (progress >= 1) {
+                    progress = 1;
+                    direction = -1; // Reverse
+                } else if (progress <= 0) {
+                    progress = 0;
+                    successDrill();
+                    return; // Done
+                }
+
+                // Calculate Y based on progress
+                const currentY = drillStartY + (progress * targetDepth);
+                drillBitFront.setAttribute('y', currentY);
+
+                // Chips & Sparks
+                if (progress > 0.2 && direction === 1) {
+                    // Only spawn chips when actually in the material (approx > 20% depth)
+                    spawnChip(300 + (Math.random() * 4 - 2), currentY + 90);
+                    if (Math.random() > 0.5) spawnChip(300, currentY + 90);
+                }
+
+                tickChips();
+
+                requestAnimationFrame(animate);
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function stopDrillingEffects() {
+            if (drillBitFront) drillBitFront.classList.remove('vibrating');
+            stopMotorSound();
+        }
+
+        function failDrill(reason) {
+            drilling = false;
+            stopDrillingEffects();
+            resetChips();
+            resetDrillBit();
+            beep();
+            flashRed();
+            showFailModal(reason);
+            setDrillStatus("FAIL: " + reason, false);
+            syncDrillUI();
+        }
+
+        function successDrill() {
+            drilling = false;
+            stopDrillingEffects();
+            // Let chips fade out naturally instead of instant reset
+            // resetChips(); 
+            setDrillStatus("SUCCESS: Perfect geboord! ✅", true);
+            syncDrillUI();
+
+            // Confetti or success sound could go here
+        }
+
+        // Init drill UI once
+        syncDrillUI();</script>
+</body>
+
+</html>

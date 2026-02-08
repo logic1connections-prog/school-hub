@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snel Registreren | School Hub</title>
+    <link rel="stylesheet" href="css/style.css?v=2">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <div class="container" style="max-width: 600px; margin-top: 4rem;">
+        <header style="justify-content: center; margin-bottom: 2rem;">
+            <h1>Welkom bij de Hub!</h1>
+        </header>
+
+        <main id="loginContent">
+            <div class="glass-panel card" style="max-width: 400px; margin: 0 auto;">
+                <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--primary);">Nieuw Account</h2>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Volledige
+                        Naam</label>
+                    <input type="text" id="regName" class="btn"
+                        style="width: 100%; background: var(--surface); text-align: left; cursor: text;"
+                        placeholder="Jan Janssens">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Klas (bijv.
+                        3ME)</label>
+                    <input type="text" id="regClass" class="btn"
+                        style="width: 100%; background: var(--surface); text-align: left; cursor: text;"
+                        placeholder="3ME">
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">E-mailadres</label>
+                    <input type="email" id="email" class="btn"
+                        style="width: 100%; background: var(--surface); text-align: left; cursor: text;"
+                        placeholder="jouw@email.be">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Wachtwoord</label>
+                    <input type="password" id="password" class="btn"
+                        style="width: 100%; background: var(--surface); text-align: left; cursor: text;"
+                        placeholder="••••••••">
+                </div>
+
+                <button class="btn btn-primary" id="submitBtn" onclick="registerWithSupabase()" style="width: 100%;">
+                    Account aanmaken &rarr;
+                </button>
+
+                <p id="errorMsg" style="color: #ef4444; margin-top: 1rem; font-size: 0.9rem; text-align: center;"></p>
+                <p style="text-align: center; margin-top: 1rem; font-size: 0.8rem;">
+                    <a href="login.html" style="color: var(--text-muted);">Al een account? Log hier in.</a>
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/supabase.js?v=4"></script>
+    <script>
+        async function registerWithSupabase() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const name = document.getElementById('regName').value;
+            const className = document.getElementById('regClass').value;
+            const btn = document.getElementById('submitBtn');
+            const errorEl = document.getElementById('errorMsg');
+
+            if (!email || !password || !name || !className) {
+                errorEl.innerText = "Vul a.u.b. alle velden in.";
+                return;
+            }
+
+            btn.innerText = "Bezig met aanmaken...";
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await signUp(email, password, name, className);
+
+                if (error) throw error;
+
+                alert("Gelukt! Je bent nu geregistreerd.");
+                window.location.href = 'index.html';
+            } catch (err) {
+                errorEl.innerText = "Fout: " + err.message;
+                btn.innerText = "Account aanmaken →";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

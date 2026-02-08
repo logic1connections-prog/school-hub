@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Paspoort | School Hub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html" class="btn" style="background: rgba(255,255,255,0.1); color: white;">&larr; Hub</a>
+            <h1>🛠️ Machine Paspoort</h1>
+            <div id="userBadge" class="glass-panel"
+                style="padding: 0.5rem 1rem; font-weight: bold; color: var(--primary);">
+                Status: Laden...
+            </div>
+        </header>
+
+        <main>
+            <div id="machinePassportList" class="grid">
+                <div class="glass-panel card loading">Machines laden...</div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import {
+            getMachines,
+            getMachineCertificates,
+            awardCertificate,
+            showError
+        } from './js/supabase.js';
+
+        const user = JSON.parse(localStorage.getItem('schoolHubUser') || '{}');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!user.id) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            await loadPassport();
+        });
+
+        async function loadPassport() {
+            const list = document.getElementById('machinePassportList');
+            const badge = document.getElementById('userBadge');
+
+            const { data: machines, error: mError } = await getMachines();
+            const { data: certs, error: cError } = await getMachineCertificates(user.id);
+
+            if (mError || cError) {
+                showError('Kon paspoort niet laden.');
+                return;
+            }
+
+            const certMap = new Map((certs || []).map(c => [c.machine_id, c]));
+            const certifiedCount = (certs || []).filter(c => c.status === 'certified').length;
+            badge.innerText = `Gecertificeerd: ${certifiedCount} / ${machines.length}`;
+
+            list.innerHTML = '';
+            machines.forEach(machine => {
+                const cert = certMap.get(machine.id);
+                const isCertified = cert?.status === 'certified';
+                const isPending = cert?.status === 'pending';
+
+                const card = document.createElement('div');
+                card.className = `glass-panel card machine-card ${isCertified ? 'certified' : ''}`;
+                card.innerHTML = `
+                    <div class="machine-icon" style="font-size: 3rem; margin-bottom: 1rem; text-align: center;">
+                        ${isCertified ? '✅' : '🔒'}
+                    </div>
+                    <h2>${machine.name}</h2>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); flex-grow: 1;">${machine.description || 'Geen beschrijving beschikbaar.'}</p>
+                    
+                    <div style="margin-top: 1.5rem; display: grid; gap: 0.5rem;">
+                        ${machine.safety_manual_url ? `<a href="${machine.safety_manual_url}" target="_blank" class="btn" style="font-size: 0.8rem; background: rgba(255,255,255,0.1);">Ref-kaart / Manual 📖</a>` : ''}
+                        
+                        ${isCertified ?
+                        `<button class="btn btn-primary" disabled style="background: var(--secondary); color: black;">Behaald op ${new Date(cert.issued_at).toLocaleDateString()}</button>` :
+                        (machine.quiz_id ?
+                            `<a href="quiz.html?id=${machine.quiz_id}&machineId=${machine.id}" class="btn btn-primary">Start Veiligheidstest 📝</a>` :
+                            '<button class="btn" disabled>Geen test beschikbaar</button>'
+                        )
+                    }
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+    </script>
+
+    <style>
+        .machine-card {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .machine-card.certified {
+            border-color: var(--secondary);
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .machine-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+    </style>
+</body>
+
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XP Winkel | School Hub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html" class="btn" style="background: rgba(255,255,255,0.1); color: white;">&larr; Terug</a>
+            <h1>🏪 XP Winkel</h1>
+            <div id="userBalance" class="glass-panel"
+                style="padding: 0.5rem 1rem; color: var(--accent); font-weight: bold;">
+                Saldo: 0 XP
+            </div>
+        </header>
+
+        <main>
+            <div id="shopGrid" class="grid">
+                <div class="glass-panel card loading">Producten laden...</div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { supabaseClient } from './js/supabase.js';
+
+        let currentUser = null;
+        let currentBalance = 0;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check Login
+            const userStr = localStorage.getItem('schoolHubUser');
+            if (!userStr) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = JSON.parse(userStr);
+
+            // Calculate Balance: Total Earned - Spent
+            // Note: We should fetch the latest 'xp_spent' from DB to be sure
+            const { data: studentData } = await supabaseClient
+                .from('students')
+                .select('total_xp, xp_spent')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (studentData) {
+                currentUser.total_xp = studentData.total_xp;
+                currentUser.xp_spent = studentData.xp_spent || 0;
+                // Update local storage just in case
+                localStorage.setItem('schoolHubUser', JSON.stringify(currentUser));
+            }
+
+            currentBalance = (currentUser.total_xp || 0) - (currentUser.xp_spent || 0);
+            document.getElementById('userBalance').innerText = `Saldo: ${currentBalance} XP`;
+
+            loadProducts();
+        });
+
+        async function loadProducts() {
+            const grid = document.getElementById('shopGrid');
+
+            const { data: products, error } = await supabaseClient
+                .from('products')
+                .select('*')
+                .order('price_xp', { ascending: true });
+
+            if (error) {
+                grid.innerHTML = `<div style="color: red">Fout: ${error.message}</div>`;
+                return;
+            }
+
+            grid.innerHTML = '';
+            products.forEach(product => {
+                const canAfford = currentBalance >= product.price_xp;
+
+                const card = document.createElement('div');
+                card.className = 'glass-panel card';
+                card.innerHTML = `
+                    <div style="height: 150px; background: #333; margin-bottom: 1rem; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        ${product.image_url ? `<img src="${product.image_url}" style="width: 100%; height: 100%; object-fit: cover;">` : '<span style="font-size: 3rem;">📚</span>'}
+                    </div>
+                    <h2>${product.title}</h2>
+                    <p>${product.description}</p>
+                    <div class="card-footer" style="margin-top: auto;">
+                        <span style="font-size: 1.2rem; font-weight: 800; color: var(--accent);">${product.price_xp} XP</span>
+                        <button class="btn ${canAfford ? 'btn-primary' : ''}" 
+                                style="${canAfford ? '' : 'opacity: 0.5; cursor: not-allowed; background: #444;'}"
+                                onclick="${canAfford ? `buyProduct(${product.id}, ${product.price_xp}, '${product.title}')` : ''}">
+                            ${canAfford ? 'Kopen' : 'Te weinig XP'}
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        window.buyProduct = async function (productId, price, title) {
+            // ... rest remains same but needs to be in this module scope
+            if (!confirm(`Wil je "${title}" kopen voor ${price} XP?`)) return;
+
+            // 1. Update xp_spent in Supabase
+            const newSpent = (currentUser.xp_spent || 0) + price;
+
+            const { error: xpError } = await supabaseClient
+                .from('students')
+                .update({ xp_spent: newSpent })
+                .eq('id', currentUser.id);
+
+            if (xpError) {
+                alert('Fout bij betalen: ' + xpError.message);
+                return;
+            }
+
+            // 2. Add to Inventory
+            const { error: invError } = await supabaseClient
+                .from('inventory')
+                .insert([{ student_id: currentUser.id, product_id: productId }]);
+
+            if (invError) {
+                alert('Fout bij levering: ' + invError.message);
+                return;
+            }
+
+            // Success
+            alert(`Gefeliciteerd! Je hebt "${title}" gekocht.`);
+
+            // Reload to update balance
+            window.location.reload();
+        }
+    </script>
+</body>
+
+</html>

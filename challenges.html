@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uitdagingen | VTI Metaal-app</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html" class="btn" style="background: rgba(255,255,255,0.1); color: white;">&larr; Terug naar
+                Hub</a>
+            <h1>Uitdagingen</h1>
+        </header>
+
+        <main>
+            <div class="grid">
+                <!-- Challenge Invitation Section -->
+                <div class="glass-panel" style="padding: 2rem;">
+                    <h2>Iemand Uitdagen</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Kies een klasgenoot en een quiz om tegen
+                        elkaar te spelen.</p>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label>Kies Leerling:</label>
+                        <select id="studentSelect" class="input-field" style="margin-top: 0.5rem;">
+                            <option value="">Laden...</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label>Kies Quiz:</label>
+                        <select id="quizSelect" class="input-field" style="margin-top: 0.5rem;">
+                            <option value="">Laden...</option>
+                        </select>
+                    </div>
+
+                    <button onclick="sendChallenge()" class="btn btn-primary" style="width: 100%;">Stuur Uitdaging!
+                        ⚔️</button>
+                </div>
+
+                <!-- Active Challenges Section -->
+                <div class="glass-panel" style="padding: 2rem;">
+                    <h2>Jouw Uitdagingen</h2>
+                    <div id="challengeList" style="margin-top: 1.5rem;">
+                        <div class="loading">Uitdagingen laden...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import {
+            supabaseClient,
+            getQuizzes,
+            getChallenges,
+            createChallenge,
+            updateChallenge,
+            showError
+        } from './js/supabase.js';
+
+        const user = JSON.parse(localStorage.getItem('schoolHubUser') || '{}');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!user.id) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            loadStudents();
+            loadQuizzes();
+            loadChallenges();
+        });
+
+        async function loadStudents() {
+            const { data: students } = await supabaseClient.from('students').select('id, name').neq('id', user.id);
+            const select = document.getElementById('studentSelect');
+            if (select) select.innerHTML = students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        }
+
+        async function loadQuizzes() {
+            const { data: quizzes } = await getQuizzes();
+            const select = document.getElementById('quizSelect');
+            if (select) select.innerHTML = quizzes.map(q => `<option value="${q.id}">${q.title}</option>`).join('');
+        }
+
+        async function loadChallenges() {
+            const { data: challenges } = await getChallenges(user.id);
+            const list = document.getElementById('challengeList');
+
+            if (!list) return;
+
+            if (!challenges || challenges.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-muted);">Geen actieve uitdagingen.</p>';
+                return;
+            }
+
+            list.innerHTML = challenges.map(c => {
+                const isChallenger = c.challenger_id === user.id;
+                const otherName = isChallenger ? c.challenged.name : c.challenger.name;
+                const statusLabel = c.status.toUpperCase();
+
+                return `
+                    <div class="glass-panel" style="padding: 1rem; margin-bottom: 1rem; border-color: rgba(255,255,255,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong style="color: var(--primary)">${otherName}</strong>
+                                <div style="font-size: 0.8rem; color: var(--text-muted)">${c.quiz.title}</div>
+                            </div>
+                            <span class="badge ${c.status === 'pending' ? 'badge-vti' : ''}">${statusLabel}</span>
+                        </div>
+                        
+                        ${c.status === 'pending' && !isChallenger ? `
+                            <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                                <button onclick="acceptChallenge(${c.id}, ${c.quiz_id})" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem;">Accepteren</button>
+                                <button onclick="declineChallenge(${c.id})" class="btn" style="padding: 0.5rem 1rem; font-size: 0.8rem; background: var(--danger);">Weigeren</button>
+                            </div>
+                        ` : ''}
+
+                        ${c.status === 'completed' ? `
+                            <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                                Resultaat: ${c.challenger_score} vs ${c.challenged_score}
+                                <br>
+                                <strong>Winnaar: ${c.winner_id === user.id ? 'JIJ! 🎉' : 'Niet gewonnen...'}</strong>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.sendChallenge = async function () {
+            const targetId = document.getElementById('studentSelect').value;
+            const quizId = document.getElementById('quizSelect').value;
+
+            if (!targetId || !quizId) return;
+
+            const { error } = await createChallenge(user.id, targetId, quizId);
+            if (error) alert('Fout bij versturen: ' + error.message);
+            else {
+                alert('Uitdaging verstuurd!');
+                loadChallenges();
+            }
+        }
+
+        window.acceptChallenge = async function (challengeId, quizId) {
+            await updateChallenge(challengeId, { status: 'accepted' });
+            window.location.href = `quiz.html?id=${quizId}&challenge=${challengeId}`;
+        }
+
+        window.declineChallenge = async function (challengeId) {
+            await updateChallenge(challengeId, { status: 'declined' });
+            loadChallenges();
+        }
+    </script>
+</body>
+
+</html>

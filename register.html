@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registreren | School Hub</title>
+    <link rel="stylesheet" href="css/style.css?v=fresh">
+    <link rel="stylesheet" href="css/style.css?v=fresh">
+</head>
+
+<body>
+    <div class="container" style="max-width: 600px; margin-top: 4rem;">
+        <header style="justify-content: center; margin-bottom: 2rem;">
+            <h1>Maak je account aan</h1>
+        </header>
+
+        <main>
+            <div class="glass-panel card" style="max-width: 450px; margin: 0 auto; padding: 2rem;">
+                <h2 style="text-align: center; margin-bottom: 1.5rem; color: var(--primary);">Nieuwe Gebruiker</h2>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Volledige
+                        Naam</label>
+                    <input type="text" id="regName" class="btn"
+                        style="width: 100%; background: var(--surface); text-align: left; cursor: text;"
+                        placeholder="Bijv. Abdelwasa Muni">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Klas</label>
+                    <input type="text" id="regClass" class="btn"
+                        style="width: 100%; background: var(--surface); text-align: left; cursor: text;"
+                        placeholder="Bijv. 4ME">
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">E-mailadres</label>
+                    <input type="email" id="email" class="btn"
+                        style="width: 100%; background: var(--surface); text-align: left; cursor: text;"
+                        placeholder="naam@vti.be">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Wachtwoord</label>
+                    <input type="password" id="password" class="btn"
+                        style="width: 100%; background: var(--surface); text-align: left; cursor: text;"
+                        placeholder="Kies een wachtwoord">
+                </div>
+
+                <button class="btn btn-primary" id="regBtn" onclick="doRegister()" style="width: 100%;">
+                    Nu Registreren &rarr;
+                </button>
+
+                <p id="errorMsg" style="color: #ef4444; margin-top: 1rem; font-size: 0.9rem; text-align: center;"></p>
+                <p style="text-align: center; margin-top: 1rem; font-size: 0.8rem;">
+                    <a href="login.html" style="color: var(--text-muted);">Heb je al een account? Log hier in.</a>
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { signUp, showError } from './js/supabase.js';
+
+        window.doRegister = async function () {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const name = document.getElementById('regName').value;
+            const className = document.getElementById('regClass').value;
+            const btn = document.getElementById('regBtn');
+            const errorEl = document.getElementById('errorMsg');
+
+            if (!email || !password || !name || !className) {
+                errorEl.innerText = "Vul a.u.b. alle velden in.";
+                return;
+            }
+
+            btn.innerText = "Bezig met aanmaken...";
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await signUp(email, password, name, className);
+
+                if (error) throw error;
+
+                alert("Account aangemaakt! Je wordt nu doorgestuurd.");
+                window.location.href = 'index.html';
+            } catch (err) {
+                errorEl.innerText = "Fout: " + err.message;
+                btn.innerText = "Nu Registreren →";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

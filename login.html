@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Hub | Toegang</title>
+    <link rel="stylesheet" href="css/style.css?v=1.1">
+    <title>School Hub | Toegang</title>
+    <link rel="stylesheet" href="css/style.css?v=1.1">
+</head>
+
+<body>
+    <div class="container" style="max-width: 600px; margin-top: 4rem;">
+        <header style="justify-content: center; margin-bottom: 2rem;">
+            <h1>Wie ben jij?</h1>
+        </header>
+
+        <main id="loginContent">
+            <div class="glass-panel card" style="max-width: 400px; margin: 0 auto;">
+                <h2 id="formTitle" style="text-align: center; margin-bottom: 1.5rem; color: var(--primary);">Inloggen
+                </h2>
+
+                <!-- Common Fields -->
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">E-mailadres</label>
+                    <input type="email" id="email" class="btn"
+                        style="width: 100%; background: var(--surface); text-align: left; cursor: text;"
+                        placeholder="student@vti.be">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Wachtwoord</label>
+                    <input type="password" id="password" class="btn"
+                        style="width: 100%; background: var(--surface); text-align: left; cursor: text;"
+                        placeholder="••••••••">
+                </div>
+
+                <!-- Registration Fields (Hidden by default) -->
+                <div id="regFields" class="hidden">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Volledige
+                            Naam</label>
+                        <input type="text" id="regName" class="btn"
+                            style="width: 100%; background: var(--surface); text-align: left; cursor: text;"
+                            placeholder="Jan Janssens">
+                    </div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Klas (bijv.
+                            3ME)</label>
+                        <input type="text" id="regClass" class="btn"
+                            style="width: 100%; background: var(--surface); text-align: left; cursor: text;"
+                            placeholder="3ME">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="submitBtn" onclick="handleSubmit()" style="width: 100%;">
+                    Inloggen &rarr;
+                </button>
+
+                <p id="toggleText"
+                    style="text-align: center; margin-top: 1rem; font-size: 0.9rem; cursor: pointer; color: var(--primary);"
+                    onclick="toggleForm()">
+                    Nog geen account? Registreer hier.
+                </p>
+
+                <p id="errorMsg" style="color: #ef4444; margin-top: 1rem; font-size: 0.9rem; text-align: center;"></p>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { supabaseClient, signUp, showError } from './js/supabase.js';
+
+        let isLogin = true;
+
+        window.toggleForm = function () {
+            isLogin = !isLogin;
+            const formTitle = document.getElementById('formTitle');
+            const submitBtn = document.getElementById('submitBtn');
+            const toggleText = document.getElementById('toggleText');
+            const regFields = document.getElementById('regFields');
+
+            if (isLogin) {
+                formTitle.innerText = "Inloggen";
+                submitBtn.innerText = "Inloggen →";
+                toggleText.innerText = "Nog geen account? Registreer hier.";
+                regFields.classList.add('hidden');
+            } else {
+                formTitle.innerText = "Registreren";
+                submitBtn.innerText = "Account aanmaken →";
+                toggleText.innerText = "Heb je al een account? Log hier in.";
+                regFields.classList.remove('hidden');
+            }
+        }
+
+        window.handleSubmit = async function () {
+            if (isLogin) {
+                await loginWithSupabase();
+            } else {
+                await registerWithSupabase();
+            }
+        }
+
+        async function registerWithSupabase() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const name = document.getElementById('regName').value;
+            const className = document.getElementById('regClass').value;
+            const btn = document.getElementById('submitBtn');
+            const errorEl = document.getElementById('errorMsg');
+
+            if (!email || !password || !name || !className) {
+                errorEl.innerText = "Vul a.u.b. alle velden in.";
+                return;
+            }
+
+            btn.innerText = "Account aanmaken...";
+            btn.disabled = true;
+
+            const { data, error } = await signUp(email, password, name, className);
+
+            if (error) {
+                errorEl.innerText = "Fout bij registreren: " + error.message;
+                btn.innerText = "Account aanmaken →";
+                btn.disabled = false;
+            } else {
+                alert("Registratie gelukt! Je kunt nu inloggen.");
+                window.toggleForm();
+                btn.disabled = false;
+            }
+        }
+
+        async function loginWithSupabase() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('submitBtn');
+            const errorEl = document.getElementById('errorMsg');
+
+            if (!email || !password) {
+                errorEl.innerText = "Vul a.u.b. alle velden in.";
+                return;
+            }
+
+            btn.innerText = "Bezig met inloggen...";
+            btn.disabled = true;
+            errorEl.innerText = "";
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) throw error;
+
+                const { data: student, error: sError } = await supabaseClient
+                    .from('students')
+                    .select('*')
+                    .eq('email', email)
+                    .single();
+
+                if (sError) throw new Error("Student niet gevonden.");
+
+                localStorage.setItem('schoolHubUser', JSON.stringify(student));
+                window.location.href = 'index.html';
+            } catch (err) {
+                errorEl.innerText = "E-mail of wachtwoord onjuist.";
+                btn.innerText = "Inloggen →";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

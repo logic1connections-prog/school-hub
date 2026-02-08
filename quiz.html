@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz | School Hub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <title>Quiz | School Hub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="result-overlay hidden" id="resultOverlay">
+        <div class="glass-panel card" style="text-align: center; max-width: 500px;">
+            <h1>Quiz Voltooid!</h1>
+            <div class="result-score" id="finalScore">0</div>
+            <p id="resultMessage" style="font-size: 1.2rem; margin-bottom: 2rem;">Goed gedaan!</p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <a href="index.html" class="btn btn-primary">Terug naar Hub</a>
+                <a href="passport.html" id="passportBtn" class="btn hidden"
+                    style="background: var(--accent); color: black;">Bekijk Paspoort</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container quiz-container">
+        <header>
+            <a href="index.html" class="btn" style="background: rgba(255,255,255,0.1); color: white;">&larr; Terug</a>
+            <div style="text-align: right;">
+                <div style="font-size: 0.9rem; color: var(--text-muted);">Score</div>
+                <div id="currentScore" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">0</div>
+            </div>
+        </header>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <main id="quizContent">
+            <div class="glass-panel card loading">
+                Vragen ophalen...
+            </div>
+        </main>
+    </div>
+
+    <!-- Hero Feedback System -->
+    <div id="heroContainer" class="hero-container">
+        <div id="speechBubble" class="speech-bubble">Hallo! Ik help je vandaag.</div>
+        <img id="heroAvatar" src="assets/heroes/juan.png" alt="Hero" class="hero-avatar">
+    </div>
+
+    <script type="module">
+        import {
+            supabaseClient,
+            getQuizQuestions,
+            saveStudentAnswer,
+            syncOfflineAnswers,
+            awardCertificate,
+            showError
+        } from './js/supabase.js';
+
+        // Game State
+        // Game State
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let streak = 0;
+        let isAnswered = false;
+
+        // Sounds
+        const sounds = {
+            correct: new Audio('assets/sounds/correct.mp3'),
+            wrong: new Audio('assets/sounds/wrong.mp3'),
+            finish: new Audio('assets/sounds/finish.mp3')
+        };
+
+        // Hero Configuration
+        const HERO_ASSETS = {
+            'Juan': { img: 'assets/heroes/juan.png', voice: 'nl-BE' },
+            'Navid': { img: 'assets/heroes/navid.png', voice: 'nl-BE' },
+            'Matteo': { img: 'assets/heroes/matteo.png', voice: 'nl-BE' },
+            'Jaren': { img: 'assets/heroes/jaren.png', voice: 'nl-BE' },
+            'Madness': { img: 'assets/heroes/madness.png', voice: 'nl-BE' },
+            'Godfather': { img: 'assets/heroes/godfather.png', voice: 'nl-BE' },
+            'Milan': { img: 'assets/heroes/milan.png', voice: 'nl-BE' },
+            'Sam': { img: 'assets/heroes/sam.png', voice: 'nl-BE' }
+        };
+
+        const HERO_FEEDBACK = {
+            'correct': [
+                { hero: 'Juan', text: "Correct uitgevoerd. Zo hoort het." },
+                { hero: 'Navid', text: "Exact volgens de maten. Goed zo." },
+                { hero: 'Matteo', text: "Ik snap het nu ook! Goede zet!" },
+                { hero: 'Sam', text: "Top gewerkt! Ga zo door." }
+            ],
+            'wrong': [
+                { hero: 'Juan', text: "Fout. Let op de hardheid van het materiaal." },
+                { hero: 'Madness', text: "BOEM! Dat was een dure fout! Kijk uit!" },
+                { hero: 'Godfather', text: "Veiligheid staat boven alles. Herlees de regel." },
+                { hero: 'Milan', text: "Oei, ik deed dat gisteren ook fout... sorry!" }
+            ],
+            'streak': [
+                { hero: 'Matteo', text: "Kijk ons gaan! De ene quest na de andere!" },
+                { hero: 'Jaren', text: "Hier is een gouden tip: rustig blijven loont." }
+            ]
+        };
+
+        // Caching
+        const CACHE_KEY = 'quiz_questions_';
+        const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+
+        async function getQuestionsWithCache(quizId) {
+            const cacheKey = CACHE_KEY + quizId;
+            const cached = localStorage.getItem(cacheKey);
+
+            if (cached) {
+                const { data, timestamp } = JSON.parse(cached);
+                if (Date.now() - timestamp < CACHE_DURATION) {
+                    console.log('Loading questions from cache');
+                    return { data, error: null };
+                }
+            }
+
+            // Fetch from DB
+            const result = await getQuizQuestions(quizId);
+
+            if (!result.error) {
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    data: result.data,
+                    timestamp: Date.now()
+                }));
+            }
+
+            return result;
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const quizId = urlParams.get('id');
+            const machineId = urlParams.get('machineId');
+            const challengeId = urlParams.get('challenge');
+            const contentDiv = document.getElementById('quizContent');
+
+            if (!quizId) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Fetch questions with cache
+            const { data: questions, error } = await getQuestionsWithCache(quizId);
+
+            if (error || !questions || questions.length === 0) {
+                showError(error?.message || 'Geen vragen gevonden.', 'quizInit');
+                contentDiv.innerHTML = `<div class="glass-panel card" style="color: #ef4444">Fout bij laden. Keer terug naar de hub.</div>`;
+                return;
+            }
+
+            // Shuffle and pick max 10 questions
+            currentQuestions = questions
+                .map(value => ({ value, sort: Math.random() }))
+                .sort((a, b) => a.sort - b.sort)
+                .map(({ value }) => value)
+                .slice(0, 10);
+
+            showQuestion(0);
+        });
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'nl-BE';
+                msg.rate = 1.0;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        function triggerHero(type, customText = null) {
+            const container = document.getElementById('heroContainer');
+            const bubble = document.getElementById('speechBubble');
+            const avatar = document.getElementById('heroAvatar');
+
+            let feedback;
+            if (customText) {
+                // Determine hero based on type or random
+                const heroName = (type === 'milan') ? 'Milan' : 'Sam';
+                feedback = { hero: heroName, text: customText };
+            } else {
+                const pool = HERO_FEEDBACK[type] || HERO_FEEDBACK['correct'];
+                feedback = pool[Math.floor(Math.random() * pool.length)];
+            }
+
+            avatar.src = HERO_ASSETS[feedback.hero].img;
+            bubble.innerText = feedback.text;
+
+            container.classList.add('active');
+            bubble.classList.add('active');
+
+            speak(feedback.text);
+
+            setTimeout(() => {
+                bubble.classList.remove('active');
+                setTimeout(() => container.classList.remove('active'), 500);
+            }, 4000);
+        }
+
+        function showQuestion(index) {
+            currentIndex = index;
+            isAnswered = false;
+            const q = currentQuestions[index];
+            const contentDiv = document.getElementById('quizContent');
+            const progress = ((index) / currentQuestions.length) * 100;
+
+            document.getElementById('progressBar').style.width = `${progress}%`;
+
+            // Animation for new question
+            contentDiv.innerHTML = `
+                <div class="glass-panel card question-card fade-in-up">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <span style="color: var(--text-muted)">Vraag ${index + 1} van ${currentQuestions.length}</span>
+                        ${streak > 1 ? `<span style="color: var(--accent)">🔥 ${streak} Streak!</span>` : ''}
+                    </div>
+                    ${q.image_url ? `
+                        <div class="question-image-container" style="text-align: center; margin-bottom: 1.5rem;">
+                            <img src="${q.image_url}" alt="Vraag afbeelding" style="max-width: 100%; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1);">
+                        </div>
+                    ` : ''}
+                    <h2 style="font-size: 1.8rem; margin-bottom: 1.5rem;">${q.question}</h2>
+                    <div class="options-grid">
+                        ${q.options.map((opt, i) => `
+                            <button class="option-btn" onclick="handleAnswer(this, ${i}, ${q.correct_index})">${opt}</button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Give Jaren the intro for the first question
+            if (index === 0) {
+                setTimeout(() => triggerHero('streak', "Klaar voor de start? Succes!"), 500);
+            }
+        }
+
+        function handleAnswer(btn, selectedIndex, correctIndex) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const q = currentQuestions[currentIndex];
+            const isCorrect = selectedIndex === correctIndex;
+            const card = document.querySelector('.question-card');
+
+            // Store result for backend validation
+            q.userAnswer = selectedIndex;
+
+            if (isCorrect) {
+                // Correct
+                btn.classList.add('selected');
+                btn.style.background = '#22c55e';
+                btn.style.borderColor = '#22c55e';
+                card.classList.add('pop');
+
+                // Local Streak Logic (Still used for UI feedback)
+                const BASE_POINTS = 10;
+                const STREAK_MULTIPLIER = 2;
+                const MAX_STREAK_BONUS = 10;
+
+                const streakBonus = Math.min(streak * STREAK_MULTIPLIER, MAX_STREAK_BONUS);
+                score += BASE_POINTS + streakBonus;
+                streak++;
+
+                // Hero Feedback
+                if (streak >= 3) {
+                    triggerHero('streak');
+                } else {
+                    triggerHero('correct');
+                }
+            } else {
+                // Wrong
+                btn.style.background = '#ef4444';
+                btn.style.borderColor = '#ef4444';
+                card.classList.add('shake');
+
+                // Milan Intervention (on regular wrong answers)
+                if (Math.random() > 0.5) {
+                    triggerHero('milan', "Help! Ik dacht echt dat het dit was... wat is het juiste antwoord?");
+                    card.classList.add('milan-alert');
+                } else {
+                    triggerHero('wrong');
+                }
+
+                // Highlight correct one
+                const buttons = document.querySelectorAll('.option-btn');
+                buttons[correctIndex].style.background = 'rgba(212, 237, 49, 0.5)';
+                buttons[correctIndex].style.borderColor = 'var(--primary)';
+
+                streak = 0;
+            }
+
+            // ✅ Update UI immediately (optimistic)
+            document.getElementById('currentScore').innerText = score;
+
+            // ⏰ Save to DB in background
+            saveAnswerInBackground(q.id, selectedIndex)
+                .catch(err => console.warn('Background save failed:', err));
+
+            // Next Question Delay
+            setTimeout(() => {
+                if (currentIndex < currentQuestions.length - 1) {
+                    showQuestion(currentIndex + 1);
+                } else {
+                    finishQuiz();
+                }
+            }, 1500);
+        }
+
+        // Network Status Handling (Global)
+        window.addEventListener('offline', () => {
+            showError('Je bent offline! Antwoorden worden lokaal bewaard.', 'network');
+        });
+
+        window.addEventListener('online', async () => {
+            const offlineData = JSON.parse(localStorage.getItem('offline_answers') || '[]');
+            if (offlineData.length > 0) {
+                const { error } = await syncOfflineAnswers(offlineData);
+                if (!error) {
+                    showError('Offline antwoorden gesynchroniseerd! 🚀', 'network');
+                    localStorage.removeItem('offline_answers');
+                } else {
+                    showError('Sync mislukt: ' + error.message, 'network');
+                }
+            }
+        });
+
+        async function saveAnswerInBackground(questionId, selectedIndex) {
+            if (!navigator.onLine) {
+                // Save locally
+                const offlineData = JSON.parse(localStorage.getItem('offline_answers') || '[]');
+                offlineData.push({
+                    questionId,
+                    selectedIndex,
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem('offline_answers', JSON.stringify(offlineData));
+                return { data: null, error: null };
+            }
+
+            return await saveStudentAnswer(questionId, selectedIndex);
+        }
+
+        async function finishQuiz() {
+            document.getElementById('progressBar').style.width = '100%';
+            const overlay = document.getElementById('resultOverlay');
+            const scoreEl = document.getElementById('finalScore');
+            const msgEl = document.getElementById('resultMessage');
+
+            // Prepare answers for backend validation
+            const answers = currentQuestions.map(q => ({
+                question_id: q.id,
+                selected: q.userAnswer ?? -1
+            }));
+
+            // Save to Student Profile & Progress via SECURE BACKEND FUNCTION
+            const userStr = localStorage.getItem('schoolHubUser');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                const quizId = currentQuestions[0].quiz_id;
+
+                try {
+                    const PASS_THRESHOLD_PCT = 90;
+                    const POINTS_PER_QUESTION = 10;
+                    const result = await saveScoreToSupabase(user.id, answers, quizId);
+
+                    scoreEl.innerText = `${result.score / POINTS_PER_QUESTION}/${currentQuestions.length}`;
+                    scoreEl.style.color = result.passed ? 'var(--primary)' : 'var(--danger)';
+
+                    if (result.passed) {
+                        msgEl.innerHTML = "Level Vrijgespeeld! 🏆<br><span style='font-size:0.9rem; color:var(--primary)'>Je bent door naar het volgende niveau.</span>";
+                        triggerHero('streak', "Wauw! Je hebt het gehaald! Op naar het volgende level!");
+
+                        // AWARD MACHINE CERTIFICATE IF APPLICABLE
+                        const machineId = new URLSearchParams(window.location.search).get('machineId');
+                        if (machineId) {
+                            await awardCertificate(user.id, machineId);
+                            msgEl.innerHTML += "<br><span style='font-size:1.1rem; color:var(--accent)'>Certificaat behaald! 🎖️</span>";
+                        }
+                    } else {
+                        msgEl.innerHTML = `Helaas, niet gehaald. ❌<br><span style='font-size:0.9rem'>Je hebt minstens ${PASS_THRESHOLD_PCT}% nodig om door te gaan.</span>`;
+                        triggerHero('milan', "Geen zorgen, ik haalde het eerst ook niet. Nog eens proberen?");
+                    }
+
+                    // Determine XP column based on category
+                    const categoryToColumn = {
+                        'Lassen': 'xp_lassen',
+                        'Veiligheid': 'xp_veiligheid',
+                        'Gereedschappen': 'xp_gereedschappen',
+                        'Machines': 'xp_machines',
+                        'Stappenplannen': 'xp_stappenplannen'
+                    };
+
+                    const { data: quizData } = await supabaseClient
+                        .from('quizzes')
+                        .select('category')
+                        .eq('id', quizId)
+                        .single();
+
+                    const xpColumn = categoryToColumn[quizData?.category] || 'xp_metaal';
+
+                    // Update local storage XP (for immediate UI feedback)
+                    user[xpColumn] = (user[xpColumn] || 0) + result.score;
+                    // Also update total_xp if we want to be complete (optional as hub fetches fresh)
+                    user.total_xp = (user.total_xp || 0) + result.score;
+
+                    localStorage.setItem('schoolHubUser', JSON.stringify(user));
+
+                    // Show Passport button if it was a machine test
+                    if (new URLSearchParams(window.location.search).has('machineId')) {
+                        document.getElementById('passportBtn').classList.remove('hidden');
+                    }
+
+                } catch (err) {
+                    showError(err.message, 'finishQuiz');
+                    msgEl.innerHTML = "Fout bij opslaan. ⚠️<br><span style='font-size:0.8rem'>Meld dit aan je docent.</span>";
+                }
+            }
+
+            overlay.classList.remove('hidden');
+        }
+
+        async function saveScoreToSupabase(studentId, answers, quizId) {
+            const { data, error } = await supabaseClient
+                .rpc('validate_quiz_answers', {
+                    p_student_id: studentId,
+                    p_quiz_id: quizId,
+                    p_answers: answers
+                });
+
+            if (error) throw error;
+            return data[0]; // {score: 80, passed: true}
+        }
+    </script>
+</body>
+
+</html>

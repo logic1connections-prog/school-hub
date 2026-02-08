@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Seeding Database...</title>
+    <script type="module" src="js/supabase.js?v=3"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2rem;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .log {
+            font-family: monospace;
+            margin-top: 1rem;
+            color: #aaa;
+        }
+
+        .success {
+            color: #4ade80;
+        }
+
+
+        .error {
+            color: #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Database Seeding</h1>
+    <div id="status">Starting...</div>
+    <div id="logs" class="log"></div>
+
+    <script type="module">
+        import { createQuiz, addQuestion } from './js/supabase.js';
+
+        const content = [
+            {
+                title: 'Veiligheid Level 1: Basics',
+                description: 'Basiskennis PBM en signalisatie.',
+                category: 'Veiligheid',
+                level: 1,
+                questions: [
+                    { question: 'Wat betekent een blauw rond bord met een wit symbool?', options: ['Verbod (mag niet)', 'Gebod (moet)', 'Waarschuwing (pas op)', 'Redding (EHBO)'], correct_index: 1 },
+                    { question: 'Welke PBM is verplicht bij lawaai boven 80dB?', options: ['Veiligheidsbril', 'Gehoorbescherming', 'Veiligheidsschoenen', 'Stofmasker'], correct_index: 1 },
+                    { question: 'Wat is de betekenis van een geel driehoekig bord met zwarte rand?', options: ['Brandgevaar', 'Waarschuwing voor gevaar', 'Verplichte rijrichting', 'Nooduitgang'], correct_index: 1 },
+                    { question: 'Waarvoor dienen veiligheidsschoenen met stalen neus?', options: ['Tegen koude voeten', 'Tegen vallende voorwerpen', 'Om sneller te lopen', 'Tegen elektrische schokken'], correct_index: 1 },
+                    { question: 'Wat doe je als je een onveilige situatie ziet?', options: ['Negeren', 'Zelf oplossen zonder kennis', 'Melden bij de leerkracht/chef', 'Weglopen'], correct_index: 2 }
+                ]
+            },
+            {
+                title: 'Gereedschappen Level 1: Handgereedschap',
+                description: 'Hamers, vijlen en zagen.',
+                category: 'Gereedschappen',
+                level: 1,
+                questions: [
+                    { question: 'Welke vijl gebruik je voor een ronde opening?', options: ['Vlakke vijl', 'Driekante vijl', 'Ronde vijl', 'Vierkante vijl'], correct_index: 2 },
+                    { question: 'Met welk gereedschap teken je af op metaal?', options: ['Potlood', 'Kraspen', 'Marker', 'Krijt'], correct_index: 1 },
+                    { question: 'Wat gebruik je om een centerpunt te slaan?', options: ['Bankhamer', 'Centerpons', 'Drevel', 'Beitel'], correct_index: 1 },
+                    { question: 'Waarom gebruik je een zachte hamer op metaal?', options: ['Om lawaai te vermijden', 'Om de oppervlakte niet te beschadigen', 'Omdat het lichter is', 'Heeft geen nut'], correct_index: 1 },
+                    { question: 'Welke zaag gebruik je voor metaal?', options: ['Handzaag', 'Beugelzaag', 'Decoupeerzaag', 'Cirkelzaag'], correct_index: 1 }
+                ]
+            },
+            {
+                title: 'Machines Level 1: De Kolomboormachine',
+                description: 'Basisbediening en toerental.',
+                category: 'Machines',
+                level: 1,
+                questions: [
+                    { question: 'Wat moet je doen met de boorsleutel na het inspannen?', options: ['Laten zitten', 'Onmiddellijk verwijderen', 'Op de tafel leggen', 'In je zak steken'], correct_index: 1 },
+                    { question: 'Mag je een werkstuk met de hand vasthouden tijdens het boren?', options: ['Ja, als het klein is', 'Nee, altijd inklemmen', 'Alleen bij lage snelheid', 'Alleen met handschoenen'], correct_index: 1 },
+                    { question: 'Wat bepaalt het toerental van de boor?', options: ['De kleur van de machine', 'De diameter van de boor en het materiaal', 'De lengte van het snoer', 'De ervaring van de leerling'], correct_index: 1 },
+                    { question: 'Wanneer gebruik je koelmiddel?', options: ['Alleen als het buiten warm is', 'Om de boor en het werkstuk te koelen', 'Om de machine schoon te maken', 'Nooit nodig'], correct_index: 1 },
+                    { question: 'Hoe verwijder je spanen bij de boormachine?', options: ['Met je handen', 'Met een kwast of spaakhaak', 'Wegblazen met je mond', 'Laten liggen'], correct_index: 1 }
+                ]
+            },
+            {
+                title: 'Stappenplannen Level 1: Voorbereiding',
+                description: 'Tekening lezen en aftekenen.',
+                category: 'Stappenplannen',
+                level: 1,
+                questions: [
+                    { question: 'Wat is de eerste stap bij een nieuw project?', options: ['Meteen beginnen zagen', 'De werktekening bestuderen', 'Gereedschap gaan halen', 'De machine aanzetten'], correct_index: 1 },
+                    { question: 'Wat betekent een dikke ononderbroken lijn op een tekening?', options: ['Zichtbare rand', 'Onzichtbare rand', 'Maatlijn', 'Hartlijn'], correct_index: 0 },
+                    { question: 'In welke eenheid staan maten op een technische tekening meestal?', options: ['Centimeter', 'Millimeter', 'Meter', 'Decimeter'], correct_index: 1 },
+                    { question: 'Waarom maak je een materiaallijst?', options: ['Voor de administratie', 'Om te weten wat je nodig hebt', 'Omdat de leerkracht het vraagt', 'Om tijd te rekken'], correct_index: 1 },
+                    { question: 'Wat doe na het aftekenen?', options: ['Meteen boren', 'Maten controleren', 'Vijl pakken', 'Koffie drinken'], correct_index: 1 }
+                ]
+            },
+            {
+                title: 'Lassen Level 1: Introductie',
+                description: 'De basis van het verbinden van materialen.',
+                category: 'Lassen',
+                level: 1,
+                questions: [
+                    { question: 'Wat is het belangrijkste PBM bij elektrisch lassen?', options: ['Veiligheidsbril', 'Laskap met filter', 'Slijpbril', 'Zonnebril'], correct_index: 1 },
+                    { question: 'Waarom moet je een laskap dragen?', options: ['Tegen de kou', 'Tegen UV- en infrarode straling', 'Voor de sier', 'Tegen lawaai'], correct_index: 1 },
+                    { question: 'Wat is "slak" bij het lassen?', options: ['Eten voor later', 'Restant van de bekleding op de lasnaad', 'Een soort lijm', 'Vloeibaar metaal'], correct_index: 1 },
+                    { question: 'Welk gas wordt vaak gebruikt bij MIG/MAG lassen?', options: ['Zuurstof', 'Argon of CO2 mengsel', 'Aardgas', 'Waterstof'], correct_index: 1 },
+                    { question: 'Wat doe je als je vermoedt dat je "lasogen" hebt?', options: ['Wrijven in je ogen', 'Melden bij de leerkracht en koelen', 'In de zon gaan zitten', 'Niets, gaat vanzelf over'], correct_index: 1 }
+                ]
+            }
+        ];
+
+        function log(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.textContent = msg;
+            if (type === 'success') div.className = 'success';
+            if (type === 'error') div.className = 'error';
+            document.getElementById('logs').appendChild(div);
+            console.log(msg);
+        }
+
+        async function seed() {
+            try {
+                // Wait for supabase to init
+                if (typeof window.createQuiz !== 'function') {
+                    throw new Error('Supabase functions not loaded. Check connection.');
+                }
+
+                log('Starting seed process...');
+
+                for (const quizData of content) {
+                    log(`Creating quiz: ${quizData.title}...`);
+
+                    // Create Quiz
+                    const { data: quizResult, error: quizError } = await createQuiz(
+                        quizData.title,
+                        quizData.description,
+                        quizData.category,
+                        quizData.level || 1
+                    );
+
+                    if (quizError) {
+                        log(`Error creating quiz ${quizData.title}: ${quizError.message}`, 'error');
+                        continue;
+                    }
+
+                    const quizId = quizResult[0].id;
+                    log(`Quiz created with ID: ${quizId}. Adding ${quizData.questions.length} questions...`);
+
+                    // Add Questions
+                    for (const q of quizData.questions) {
+                        const { error: qError } = await addQuestion(
+                            quizId,
+                            q.question,
+                            q.options,
+                            q.correct_index
+                        );
+
+                        if (qError) {
+                            log(`Error adding question "${q.question}": ${qError.message}`, 'error');
+                        }
+                    }
+                    log(`Finished quiz: ${quizData.title}`, 'success');
+                }
+
+                document.getElementById('status').textContent = 'DONE';
+                document.getElementById('status').className = 'success';
+                log('All done!', 'success');
+                log('OPMERKING: Leerlingen worden automatisch toegevoegd zodra ze voor het eerst inloggen op de login-pagina.', 'success');
+
+            } catch (err) {
+                document.getElementById('status').textContent = 'ERROR';
+                log(err.message, 'error');
+            }
+        }
+
+        // Start after a short delay to ensure scripts load
+        setTimeout(seed, 1000);
+    </script>
+</body>
+
+</html>

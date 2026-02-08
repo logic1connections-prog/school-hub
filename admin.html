@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | School Hub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <title>Admin Dashboard | School Hub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html" class="btn" style="background: rgba(255,255,255,0.1); color: white;">&larr; Terug naar
+                Hub</a>
+            <h1>Docenten Dashboard</h1>
+        </header>
+
+        <main>
+            <!-- Section: Analytics Dashboard -->
+            <div class="glass-panel card" style="margin-bottom: 2rem;">
+                <h2>Statistieken & Analytics</h2>
+                <div id="analyticsOverview" class="grid"
+                    style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <div class="glass-panel" style="padding: 1rem; text-align: center;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Totaal Pogingen</span>
+                        <h1 id="statTotal" style="margin: 0.5rem 0; color: var(--primary);">0</h1>
+                    </div>
+                    <div class="glass-panel" style="padding: 1rem; text-align: center;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Slaagpercentage</span>
+                        <h1 id="statPass" style="margin: 0.5rem 0; color: var(--primary);">0%</h1>
+                    </div>
+                    <div class="glass-panel" style="padding: 1rem; text-align: center;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Gem. Score</span>
+                        <h1 id="statAvg" style="margin: 0.5rem 0; color: var(--primary);">0%</h1>
+                    </div>
+                </div>
+
+                <div
+                    style="margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                    <div>
+                        <h3>Moeilijkste Vragen (Focus Nodig)</h3>
+                        <ul id="difficultQuestionsList"
+                            style="list-style: none; margin-top: 1rem; display: grid; gap: 0.5rem;">
+                            <!-- Top 5 hardest questions -->
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Populaire Categorieën</h3>
+                        <div id="popularCategoriesList"
+                            style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            <!-- Category tags -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Section: Create New Quiz -->
+            <div class="glass-panel card" style="margin-bottom: 2rem;">
+                <h2>Nieuwe Quiz of Toets Maken</h2>
+                <form id="createQuizForm" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center;">
+                        <input type="text" id="quizTitle" placeholder="Titel (bijv. Lassen: Basistechniek)" required
+                            class="input-field">
+                        <label
+                            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: var(--surface); padding: 0.5rem; border-radius: 8px;">
+                            <input type="checkbox" id="isToets"> Officiële Toets
+                        </label>
+                    </div>
+                    <input type="text" id="quizDesc" placeholder="Beschrijving" class="input-field">
+                    <input type="text" id="quizCat" placeholder="Categorie (bijv. Lassen)" required class="input-field">
+                    <button type="submit" class="btn btn-primary">Quiz / Toets Aanmaken</button>
+                </form>
+            </div>
+
+            <!-- Section: Bulk Import -->
+            <div class="glass-panel card" style="margin-bottom: 2rem;">
+                <h2>Snel Vragen Importeren</h2>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">
+                    Plak hier je vragen vanuit je cursus of ChatGPT. Gebruik dit formaat per vraag:<br>
+                    <strong>Vraag? | Optie 1 | Optie 2 | Optie 3 | Optie 4 | IndexCorrectAntwoord (0-3)</strong>
+                </p>
+                <select id="importQuizSelect" class="input-field" style="margin-bottom: 1rem;">
+                    <option value="">-- Selecteer Quiz --</option>
+                </select>
+                <textarea id="bulkData" class="input-field" style="min-height: 150px; font-family: monospace;"
+                    placeholder="Wat is de hoofdstad? | Parijs | Berlijn | Londen | Madrid | 0"></textarea>
+                <button onclick="bulkImport()" class="btn btn-primary" style="margin-top: 1rem; width: 100%;">Vragen
+                    Importeren</button>
+            </div>
+
+            <!-- Section: Student Monitoring -->
+            <div class="glass-panel card" style="margin-bottom: 2rem;">
+                <h2>Leerlingen Voortgang</h2>
+                <div id="studentProgressList" style="margin-top: 1rem;">
+                    <p>Laden...</p>
+                </div>
+            </div>
+
+            <!-- Section: Test Results -->
+            <div class="glass-panel card" style="margin-bottom: 2rem;">
+                <h2>Toets Resultaten</h2>
+                <div id="testResultsList" style="margin-top: 1rem;">
+                    <p>Laden...</p>
+                </div>
+            </div>
+
+            <!-- Section: Manage Quizzes -->
+            <div class="glass-panel card" style="margin-bottom: 2rem;">
+                <h2>Quizzen & Niveaus Beheren</h2>
+                <div id="adminQuizList" class="grid" style="margin-top: 1rem;">
+                    <p>Laden...</p>
+                </div>
+            </div>
+
+            <!-- Section: Manage Machines & QR Codes -->
+            <div class="glass-panel card">
+                <h2>Machines & QR Codes</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                    Beheer machines en genereer QR-codes voor in de werkplaats.
+                </p>
+
+                <form id="createMachineForm"
+                    style="display: grid; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 2rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <input type="text" id="machineName" placeholder="Naam (bijv. Kolomboormachine)" required
+                            class="input-field">
+                        <select id="machineQuizSelect" class="input-field">
+                            <option value="">-- Koppel Quiz (voor certificaat) --</option>
+                        </select>
+                    </div>
+                    <input type="text" id="machineDesc" placeholder="Beschrijving" class="input-field">
+                    <input type="text" id="machineManual" placeholder="Link naar Ref-kaart / Manual (URL)"
+                        class="input-field">
+                    <button type="submit" class="btn btn-primary">Machine Toevoegen</button>
+                </form>
+
+                <div id="adminMachineList" class="grid" style="margin-top: 1rem;">
+                    <p>Laden...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Adding Questions -->
+    <div id="questionModal" class="modal hidden">
+        <div class="glass-panel card modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 id="modalTitle">Vragen Toevoegen</h2>
+                <button onclick="closeModal()" class="btn"
+                    style="background: transparent; color: white;">&times;</button>
+            </div>
+
+            <form id="addQuestionForm" style="display: grid; gap: 1rem;">
+                <input type="hidden" id="currentQuizId">
+
+                <label>Vraag:</label>
+                <input type="text" id="qText" required class="input-field" placeholder="Wat is 2 + 2?">
+
+                <label>Afbeelding URL (optioneel):</label>
+                <input type="text" id="qImage" class="input-field" placeholder="https://voorbeeld.com/beeld.jpg">
+
+                <label>Antwoorden:</label>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center;">
+                    <input type="text" id="opt0" required class="input-field" placeholder="Optie A">
+                    <input type="radio" name="correct" value="0" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center;">
+                    <input type="text" id="opt1" required class="input-field" placeholder="Optie B">
+                    <input type="radio" name="correct" value="1">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center;">
+                    <input type="text" id="opt2" required class="input-field" placeholder="Optie C">
+                    <input type="radio" name="correct" value="2">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center;">
+                    <input type="text" id="opt3" required class="input-field" placeholder="Optie D">
+                    <input type="radio" name="correct" value="3">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Vraag Opslaan</button>
+            </form>
+
+            <div style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                <h3>Huidige Vragen:</h3>
+                <ul id="questionsList"
+                    style="list-style: none; margin-top: 0.5rem; max-height: 200px; overflow-y: auto;">
+                    <!-- List of questions -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import {
+            supabaseClient,
+            getQuizzes,
+            getQuizQuestions,
+            getQuizAnalytics,
+            createQuiz,
+            addQuestion,
+            saveQuizQuestions,
+            deleteQuiz,
+            getMachines,
+            showError
+        } from './js/supabase.js';
+
+        // Admin Logic
+        // Admin Logic
+        document.addEventListener('DOMContentLoaded', async () => {
+            const isAdmin = await checkAdmin();
+            if (!isAdmin) return;
+
+            loadQuizzes();
+            loadStudentMonitoring();
+            loadTestResults();
+            loadAnalytics();
+            loadMachines();
+        });
+
+        async function checkAdmin() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return false;
+            }
+
+            const { data: student } = await supabaseClient
+                .from('students')
+                .select('is_admin')
+                .eq('id', user.id)
+                .single();
+
+            if (!student || !student.is_admin) {
+                showError('Toegang geweigerd: U bent geen administrator.', 'auth');
+                window.location.href = 'index.html';
+                return false;
+            }
+            return true;
+        }
+
+        async function loadAnalytics() {
+            try {
+                const { data: stats, error } = await getQuizAnalytics();
+                if (error) throw error;
+
+                if (!stats) return;
+
+                // Simple Stats
+                document.getElementById('statTotal').innerText = stats.total_attempts || 0;
+                document.getElementById('statPass').innerText = (stats.pass_rate || 0) + '%';
+                document.getElementById('statAvg').innerText = (stats.average_score || 0) + '%';
+
+                // Difficult Questions
+                const diffList = document.getElementById('difficultQuestionsList');
+                diffList.innerHTML = '';
+                if (stats.difficult_questions && stats.difficult_questions.length > 0) {
+                    stats.difficult_questions.forEach(q => {
+                        const li = document.createElement('li');
+                        li.className = 'glass-panel';
+                        li.style.padding = '0.5rem';
+                        li.style.fontSize = '0.9rem';
+                        li.innerHTML = `
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="flex: 1; padding-right: 1rem;">${q.question}</span>
+                                <span style="background: var(--danger); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">
+                                    ${q.success_rate}% success
+                                </span>
+                            </div>
+                        `;
+                        diffList.appendChild(li);
+                    });
+                } else {
+                    diffList.innerHTML = '<p style="color:var(--text-muted)">Nog geen data beschikbaar.</p>';
+                }
+
+                // Popular Categories
+                const catList = document.getElementById('popularCategoriesList');
+                catList.innerHTML = '';
+                if (stats.popular_categories && stats.popular_categories.length > 0) {
+                    stats.popular_categories.forEach(c => {
+                        const tag = document.createElement('span');
+                        tag.style.background = 'var(--primary)';
+                        tag.style.color = 'black';
+                        tag.style.padding = '2px 10px';
+                        tag.style.borderRadius = '20px';
+                        tag.style.fontSize = '0.8rem';
+                        tag.style.fontWeight = 'bold';
+                        tag.innerText = `${c.category} (${c.count})`;
+                        catList.appendChild(tag);
+                    });
+                } else {
+                    catList.innerHTML = '<p style="color:var(--text-muted)">Nog geen data.</p>';
+                }
+
+            } catch (err) {
+                console.warn('Analytics failed:', err);
+                // Fail silently or show subtle error
+            }
+        }
+
+        async function loadStudentMonitoring() {
+            const list = document.getElementById('studentProgressList');
+            const { data: students } = await supabaseClient.from('students').select('*').order('name', { ascending: true });
+            const { data: progress } = await supabaseClient.from('student_progress').select('*');
+
+            if (!students) return;
+
+            list.innerHTML = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 2px solid var(--glass-border);">
+                            <th style="padding: 0.5rem;">Naam</th>
+                            <th style="padding: 0.5rem;">Klas</th>
+                            <th style="padding: 0.5rem;">Totaal XP</th>
+                            <th style="padding: 0.5rem;">Voortgang</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${students.map(s => {
+                const passed = (progress || []).filter(p => p.student_id === s.id && p.passed).length;
+                return `
+                                <tr style="border-bottom: 1px solid var(--glass-border);">
+                                    <td style="padding: 0.5rem;">${s.name}</td>
+                                    <td style="padding: 0.5rem;">${s.class}</td>
+                                    <td style="padding: 0.5rem; color: var(--primary); font-weight: bold;">${s.total_xp}</td>
+                                    <td style="padding: 0.5rem; font-size: 0.8rem;">${passed} quizzen afgerond</td>
+                                </tr>
+                            `;
+            }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        async function loadTestResults() {
+            const list = document.getElementById('testResultsList');
+
+            // Get all 'Toetsen' category quizzes
+            const { data: tests } = await supabaseClient.from('quizzes').select('id, title').eq('category', 'Toetsen');
+            const { data: students } = await supabaseClient.from('students').select('id, name');
+            const { data: progress } = await supabaseClient.from('student_progress').select('*');
+
+            if (!tests || !students || !progress) {
+                list.innerHTML = '<p>Geen data beschikbaar.</p>';
+                return;
+            }
+
+            // Filter progress to only include test results
+            const testIds = tests.map(t => t.id);
+            const testProgress = progress.filter(p => testIds.includes(p.quiz_id));
+
+            if (testProgress.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-muted)">Nog geen toetsen ingeleverd.</p>';
+                return;
+            }
+
+            list.innerHTML = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 2px solid var(--glass-border);">
+                            <th style="padding: 0.5rem;">Leerling</th>
+                            <th style="padding: 0.5rem;">Toets</th>
+                            <th style="padding: 0.5rem;">Resultaat</th>
+                            <th style="padding: 0.5rem;">Datum</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${testProgress.map(p => {
+                const student = students.find(s => s.id === p.student_id);
+                const test = tests.find(t => t.id === p.quiz_id);
+                const date = new Date(p.created_at).toLocaleDateString('nl-NL');
+                return `
+                                <tr style="border-bottom: 1px solid var(--glass-border);">
+                                    <td style="padding: 0.5rem; font-weight: bold;">${student?.name || 'Onbekend'}</td>
+                                    <td style="padding: 0.5rem;">${test?.title || 'Onbekende Toets'}</td>
+                                    <td style="padding: 0.5rem;">
+                                        <span class="btn" style="padding: 2px 8px; font-size: 0.8rem; background: ${p.passed ? '#22c55e' : '#ef4444'}">
+                                            ${p.passed ? 'GESLAAGD' : 'GEZAKT'} (${p.score} XP)
+                                        </span>
+                                    </td>
+                                    <td style="padding: 0.5rem; font-size: 0.8rem; color: var(--text-muted)">${date}</td>
+                                </tr>
+                            `;
+            }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        let allQuizzes = [];
+
+        async function loadQuizzes() {
+            const list = document.getElementById('adminQuizList');
+            const importSelect = document.getElementById('importQuizSelect');
+            const { data: quizzes, error } = await getQuizzes();
+            allQuizzes = quizzes || [];
+
+            if (error) {
+                showError(error.message, 'loadQuizzes');
+                list.innerHTML = `<p style="color: #ef4444">Fout bij laden van quizzen.</p>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            importSelect.innerHTML = '<option value="">-- Selecteer Quiz --</option>';
+
+            quizzes.forEach(quiz => {
+                // Main List
+                const div = document.createElement('div');
+                div.className = 'glass-panel card';
+                div.style.padding = '1rem';
+                div.innerHTML = `
+                    <h3>${quiz.title} ${quiz.category === 'Toetsen' ? '🏷️' : ''}</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-muted)">${quiz.category} • ${quiz.question_count} vragen</p>
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        <button onclick="openQuestionModal(${quiz.id}, '${quiz.title}')" class="btn btn-primary" style="font-size: 0.8rem;">Vragen +</button>
+                        <button onclick="deleteQuizHandler(${quiz.id})" class="btn" style="background: #ef4444; color: white; font-size: 0.8rem;">Verwijder</button>
+                    </div>
+                `;
+                list.appendChild(div);
+
+                // Import Dropdown
+                const opt = document.createElement('option');
+                opt.value = quiz.id;
+                opt.innerText = quiz.title;
+                importSelect.appendChild(opt);
+            });
+        }
+
+        // Create Quiz
+        document.getElementById('createQuizForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('quizTitle').value;
+            const desc = document.getElementById('quizDesc').value;
+            const isToets = document.getElementById('isToets').checked;
+            const cat = isToets ? 'Toetsen' : document.getElementById('quizCat').value;
+
+            const { error } = await createQuiz(title, desc, cat);
+            if (error) showError(error.message, 'createQuiz');
+            else {
+                e.target.reset();
+                loadQuizzes();
+            }
+        });
+
+        // Bulk Import
+        async function bulkImport() {
+            const quizId = document.getElementById('importQuizSelect').value;
+            const data = document.getElementById('bulkData').value.trim();
+
+            if (!quizId || !data) {
+                showError('Selecteer een quiz en plak data!', 'bulkImport');
+                return;
+            }
+
+            const lines = data.split('\n');
+            const questions = [];
+
+            try {
+                lines.forEach((line, index) => {
+                    const lineNum = index + 1;
+                    const parts = line.split('|').map(p => p.trim());
+
+                    if (!line || line.trim() === '') return; // Skip empty lines
+
+                    // Validate format: 6 mandatory parts, 7th is optional image
+                    if (parts.length < 6 || parts.length > 7) {
+                        throw new Error(`Regel ${lineNum}: Verwacht 6 of 7 delen (Vraag|Opties...|Index|ImageURL). Gekregen: ${parts.length}`);
+                    }
+
+                    // Validate question text
+                    if (!parts[0] || parts[0].length < 5) {
+                        throw new Error(`Regel ${lineNum}: Vraag is te kort.`);
+                    }
+
+                    // Validate correct index
+                    const correctIndex = parseInt(parts[5]);
+                    if (isNaN(correctIndex) || correctIndex < 0 || correctIndex > 3) {
+                        throw new Error(`Regel ${lineNum}: Index ongeldig.`);
+                    }
+
+                    questions.push({
+                        question: parts[0],
+                        options: parts.slice(1, 5),
+                        correct_index: correctIndex,
+                        image_url: parts[6] || null
+                    });
+                });
+
+                if (questions.length === 0) throw new Error('Geen geldige vragen gevonden om te importeren.');
+
+                const { error } = await saveQuizQuestions(quizId, questions);
+                if (error) throw error;
+
+                showError(`${questions.length} vragen succesvol geïmporteerd!`, 'bulkImport');
+                document.getElementById('bulkData').value = '';
+                loadQuizzes();
+            } catch (err) {
+                showError(err.message, 'bulkImport');
+            }
+        }
+
+        // Modal Logic
+        const modal = document.getElementById('questionModal');
+
+        window.openQuestionModal = async (id, title) => {
+            document.getElementById('currentQuizId').value = id;
+            document.getElementById('modalTitle').innerText = `Vragen voor: ${title}`;
+            modal.classList.remove('hidden');
+            loadQuestionsForQuiz(id);
+        };
+
+        window.closeModal = () => {
+            modal.classList.add('hidden');
+        };
+
+        async function loadQuestionsForQuiz(id) {
+            const list = document.getElementById('questionsList');
+            list.innerHTML = 'Laden...';
+            const { data: questions } = await getQuizQuestions(id);
+            list.innerHTML = '';
+            if (questions) {
+                questions.forEach(q => {
+                    const li = document.createElement('li');
+                    li.style.padding = '0.5rem 0';
+                    li.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+                    li.innerText = q.question;
+                    list.appendChild(li);
+                });
+            }
+        }
+
+        // Add Question
+        document.getElementById('addQuestionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const quizId = document.getElementById('currentQuizId').value;
+            const question = document.getElementById('qText').value;
+            const imageUrl = document.getElementById('qImage').value || null;
+            const options = [
+                document.getElementById('opt0').value,
+                document.getElementById('opt1').value,
+                document.getElementById('opt2').value,
+                document.getElementById('opt3').value
+            ];
+            const correctIndex = parseInt(document.querySelector('input[name="correct"]:checked').value);
+
+            const { error } = await addQuestion(quizId, question, options, correctIndex, imageUrl);
+            if (error) showError(error.message, 'addQuestion');
+            else {
+                // Clear form but keep modal open
+                document.getElementById('qText').value = '';
+                document.getElementById('opt0').value = '';
+                document.getElementById('opt1').value = '';
+                document.getElementById('opt2').value = '';
+                document.getElementById('opt3').value = '';
+                // Reload questions list
+                loadQuestionsForQuiz(quizId);
+                // Refresh main list to update count
+                loadQuizzes();
+            }
+        });
+
+        window.deleteQuizHandler = async (id) => {
+            const quiz = allQuizzes.find(q => q.id === id);
+            if (!quiz) return;
+
+            const confirmed = confirm(
+                `WAARSCHUWING!\n\n` +
+                `Je gaat "${quiz.title}" verwijderen.\n` +
+                `Dit verwijdert ook alle ${quiz.question_count?.count || 0} vragen!\n\n` +
+                `Weet je het 100% zeker?`
+            );
+
+            if (!confirmed) return;
+
+            // Extra check voor officiële toetsen
+            if (quiz.category === 'Toetsen') {
+                const doubleCheck = prompt(
+                    `Dit is een OFFICIËLE TOETS!\n\n` +
+                    `Type "VERWIJDER" om te bevestigen (hoofdlettergevoelig)`
+                );
+                if (doubleCheck !== 'VERWIJDER') {
+                    showError('Verwijderen geannuleerd of onjuiste code.', 'deleteQuiz');
+                    return;
+                }
+            }
+
+            const { error } = await deleteQuiz(id);
+            if (error) showError(error.message, 'deleteQuiz');
+            else loadQuizzes();
+        };
+
+        // --- NEW: Machine Management ---
+        async function loadMachines() {
+            const list = document.getElementById('adminMachineList');
+            const machineQuizSelect = document.getElementById('machineQuizSelect');
+            const { data: machines, error } = await getMachines();
+
+            if (error) {
+                list.innerHTML = `<p style="color: #ef4444">Fout bij laden van machines.</p>`;
+                return;
+            }
+
+            // Populate Machine List
+            list.innerHTML = '';
+            machines.forEach(m => {
+                const quiz = allQuizzes.find(q => q.id == m.quiz_id);
+                const div = document.createElement('div');
+                div.className = 'glass-panel card';
+                div.style.padding = '1rem';
+
+                // Deep link for QR
+                const deepLink = `${window.location.origin}/quiz.html?id=${m.quiz_id}&machineId=${m.id}`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(deepLink)}`;
+
+                div.innerHTML = `
+                    <h3>${m.name}</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-muted)">${m.quiz_id ? `Gekoppeld aan: ${quiz?.title || 'Quiz ' + m.quiz_id}` : 'Geen quiz gekoppeld'}</p>
+                    
+                    <div style="margin-top: 1rem; text-align: center; background: white; padding: 10px; border-radius: 8px; display: inline-block;">
+                        <img src="${qrUrl}" alt="QR Code" style="width: 100px; height: 100px;">
+                        <div style="font-size: 0.6rem; color: #333; margin-top: 5px;">Scan voor test</div>
+                    </div>
+
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        <button onclick="window.open('${qrUrl}', '_blank')" class="btn" style="font-size: 0.7rem; background: var(--accent); color: black;">Print QR 🖨️</button>
+                        <button onclick="deleteMachineHandler('${m.id}')" class="btn" style="background: #ef4444; color: white; font-size: 0.7rem;">Verwijder</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+
+            // Update machine quiz dropdown
+            machineQuizSelect.innerHTML = '<option value="">-- Koppel Quiz (voor certificaat) --</option>';
+            allQuizzes.forEach(q => {
+                const opt = document.createElement('option');
+                opt.value = q.id;
+                opt.innerText = q.title;
+                machineQuizSelect.appendChild(opt);
+            });
+        }
+
+        document.getElementById('createMachineForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('machineName').value;
+            const quizId = document.getElementById('machineQuizSelect').value || null;
+            const desc = document.getElementById('machineDesc').value;
+            const manual = document.getElementById('machineManual').value;
+
+            const { error } = await supabaseClient
+                .from('machines')
+                .insert([{ name, quiz_id: quizId, description: desc, safety_manual_url: manual }]);
+
+            if (error) showError(error.message, 'createMachine');
+            else {
+                e.target.reset();
+                loadMachines();
+            }
+        });
+
+        window.deleteMachineHandler = async (id) => {
+            if (!confirm('Weet je zeker dat je deze machine wilt verwijderen?')) return;
+            const { error } = await supabaseClient.from('machines').delete().eq('id', id);
+            if (error) showError(error.message, 'deleteMachine');
+            else loadMachines();
+        };
+    </script>
+</body>
+
+</html>

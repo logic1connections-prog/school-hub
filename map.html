@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Werkplaats Map | School Hub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container" style="max-width: 1000px;">
+        <header>
+            <a href="index.html" class="btn" style="background: rgba(255,255,255,0.1); color: white;">&larr; Hub</a>
+            <h1>🗺️ Interactive Werkplaats</h1>
+        </header>
+
+        <main>
+            <div class="glass-panel"
+                style="padding: 1rem; position: relative; overflow: hidden; background: #222; min-height: 500px; border-radius: 20px;">
+                <!-- Map Background (Placeholder for real floorplan) -->
+                <div
+                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.1; background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 40px 40px;">
+                </div>
+
+                <div id="mapContainer" style="position: relative; width: 100%; height: 500px;">
+                    <!-- Example Machine Hotspots -->
+                    <div class="hotspot" style="top: 20%; left: 15%;" onclick="showMachineInfo('boormachine')">⚙️</div>
+                    <div class="hotspot" style="top: 20%; left: 35%;" onclick="showMachineInfo('draaibank')">⚙️</div>
+                    <div class="hotspot" style="top: 60%; left: 70%;" onclick="showMachineInfo('lassen')">🔥</div>
+                </div>
+
+                <div id="machineInfoPanel" class="glass-panel hidden fade-in-up"
+                    style="position: absolute; bottom: 20px; left: 20px; right: 20px; padding: 1.5rem; background: rgba(0,0,0,0.8); z-index: 100;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <h2 id="infoTitle" style="margin-bottom: 0.5rem; color: var(--primary);">Machine Naam</h2>
+                            <p id="infoDesc" style="color: var(--text-muted); font-size: 0.9rem;">Beschrijving...</p>
+                        </div>
+                        <button class="btn" onclick="hideInfo()">Sluit</button>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <a id="infoLink" href="#" class="btn btn-primary">Bekijk in Paspoort &rarr;</a>
+                    </div>
+                </div>
+            </div>
+
+            <p style="text-align: center; margin-top: 1rem; color: var(--text-muted); font-size: 0.8rem;">
+                Tip: Klik op een icoon om de status van de machine te bekijken.
+            </p>
+        </main>
+    </div>
+
+    <script type="module">
+        import { getMachines, getMachineCertificates } from './js/supabase.js';
+
+        const machines = {
+            'boormachine': { name: 'Kolomboormachine', desc: 'Certificaat vereist voor onbegeleid gebruik.', link: 'passport.html' },
+            'draaibank': { name: 'Metaaldraaibank', desc: 'Pas op voor draaiende delen. Veiligheidsbril verplicht!', link: 'passport.html' },
+            'lassen': { name: 'Lascabine 1', desc: 'Niet kijken in de lichtboog.', link: 'passport.html' }
+        };
+
+        window.showMachineInfo = function (id) {
+            const data = machines[id];
+            document.getElementById('infoTitle').innerText = data.name;
+            document.getElementById('infoDesc').innerText = data.desc;
+            document.getElementById('infoLink').href = data.link;
+            document.getElementById('machineInfoPanel').classList.remove('hidden');
+        };
+
+        window.hideInfo = function () {
+            document.getElementById('machineInfoPanel').classList.add('hidden');
+        };
+    </script>
+
+    <style>
+        .hotspot {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: black;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 0 15px var(--primary);
+            animation: pulse 2s infinite;
+            transition: transform 0.2s;
+        }
+
+        .hotspot:hover {
+            transform: scale(1.2);
+            z-index: 10;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(34, 197, 94, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
+        }
+    </style>
+</body>
+
+</html>

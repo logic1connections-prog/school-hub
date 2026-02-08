@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard | School Hub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html" class="btn" style="background: rgba(255,255,255,0.1); color: white;">&larr; Terug</a>
+            <h1>🏆 Leaderboard</h1>
+        </header>
+
+        <main id="leaderboardContent">
+            <div class="glass-panel card loading">Scores laden...</div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { supabaseClient } from './js/supabase.js';
+
+        document.addEventListener('DOMContentLoaded', loadLeaderboard);
+        document.addEventListener('DOMContentLoaded', loadLeaderboard);
+
+        async function loadLeaderboard() {
+            const contentDiv = document.getElementById('leaderboardContent');
+
+            const { data: students, error } = await supabaseClient
+                .from('students')
+                .select('*')
+                .order('total_xp', { ascending: false });
+
+            if (error) {
+                contentDiv.innerHTML = `<div style="color: red">Fout: ${error.message}</div>`;
+                return;
+            }
+
+            // Group by Class
+            const classes = {};
+            students.forEach(s => {
+                if (!classes[s.class]) classes[s.class] = [];
+                classes[s.class].push(s);
+            });
+
+            contentDiv.innerHTML = '';
+
+            // Render per Class
+            Object.keys(classes).sort().forEach(className => {
+                const classSection = document.createElement('div');
+                classSection.style.marginBottom = '3rem';
+
+                const title = document.createElement('h2');
+                title.innerText = `Klas ${className}`;
+                title.style.color = 'var(--secondary)';
+                title.style.marginBottom = '1rem';
+                title.style.borderBottom = '1px solid var(--glass-border)';
+                title.style.paddingBottom = '0.5rem';
+                classSection.appendChild(title);
+
+                const list = document.createElement('div');
+                list.className = 'grid';
+                list.style.gridTemplateColumns = '1fr';
+                list.style.gap = '0.5rem';
+
+                classes[className].forEach((student, index) => {
+                    const row = document.createElement('div');
+                    row.className = 'glass-panel';
+                    row.style.display = 'flex';
+                    row.style.alignItems = 'center';
+                    row.style.padding = '1rem';
+                    row.style.borderRadius = '8px';
+
+                    // Medal for top 3
+                    let rank = `<span style="width: 30px; font-weight: bold; color: var(--text-muted);">${index + 1}.</span>`;
+                    if (index === 0) rank = '🥇';
+                    if (index === 1) rank = '🥈';
+                    if (index === 2) rank = '🥉';
+
+                    row.innerHTML = `
+                        <div style="font-size: 1.2rem; width: 40px;">${rank}</div>
+                        <div style="flex-grow: 1; font-weight: 600;">${student.name}</div>
+                        <div style="font-weight: 800; color: var(--primary);">${student.total_xp || 0} XP</div>
+                    `;
+                    list.appendChild(row);
+                });
+
+                classSection.appendChild(list);
+                contentDiv.appendChild(classSection);
+            });
+        }
+    </script>
+</body>
+
+</html>
