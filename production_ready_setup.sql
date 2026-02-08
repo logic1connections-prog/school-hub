@@ -503,3 +503,17 @@ INSERT INTO tiktok_content_queue (concept, logic_hero) VALUES
 ('Verkeerde tang gebruiken bij het strippen van kabels', 'Navid'),
 ('Metalen boor gebruiken voor hout op hoge snelheid', 'Juan'),
 ('Zwarte draad als aarding gebruiken (gevaarlijk!)', 'Matteo');
+
+-- 5. AUTOMATISCHE SYNC & UPDATES
+-- ==========================================
+
+-- Sync bestaande Auth users (voor als je al geregistreerd was maar de tabel is gereset)
+insert into public.students (id, email, name, class)
+select id, email, 'Docent/Admin', 'VTI' from auth.users
+on conflict (id) do nothing;
+
+-- Maak de eerste gebruiker (waarschijnlijk jij) Admin
+update students set is_admin = true where email = 'logic1connections@gmail.com';
+
+-- Einde script
+-- ==========================================
