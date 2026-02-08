@@ -96,7 +96,7 @@
             renderFolders();
         });
 
-        function renderFolders() {
+        window.renderFolders = function () {
             const grid = document.getElementById('quizGrid');
             const header = document.querySelector('header h1');
 
@@ -258,7 +258,7 @@
             }
         }
 
-        function logout() {
+        window.logout = function () {
             localStorage.removeItem('schoolHubUser');
             window.location.reload();
         }

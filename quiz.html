@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz | School Hub</title>
     <link rel="stylesheet" href="css/style.css">
-    <title>Quiz | School Hub</title>
-    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
@@ -242,7 +240,7 @@
             }
         }
 
-        function handleAnswer(btn, selectedIndex, correctIndex) {
+        window.handleAnswer = function (btn, selectedIndex, correctIndex) {
             if (isAnswered) return;
             isAnswered = true;
 

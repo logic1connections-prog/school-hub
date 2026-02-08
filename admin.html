@@ -446,7 +446,7 @@
         });
 
         // Bulk Import
-        async function bulkImport() {
+        window.bulkImport = async function () {
             const quizId = document.getElementById('importQuizSelect').value;
             const data = document.getElementById('bulkData').value.trim();
 
